@@ -1,5 +1,6 @@
 import React, { memo, FC, ReactNode } from 'react';
 import List from 'rc-virtual-list';
+import type { TableTheme } from './themes';
 
 /**
  * Props for the TableList component
@@ -33,6 +34,9 @@ interface TableListProps {
   /** Column widths */
   /** 列宽度 */
   columnWidth: Record<string, number>;
+  /** Table theme */
+  /** 表格主题 */
+  theme?: TableTheme;
 }
 
 /**
@@ -52,7 +56,52 @@ const TableList: FC<TableListProps> = props => {
     rowHeight = 40,
     onRow,
     columnWidth,
+    theme,
   } = props;
+
+  // 默认主题
+  const defaultTheme: TableTheme = {
+    primaryColor: '#1890ff',
+    headerBgColor: '#f0f0f0',
+    headerTextColor: '#333',
+    bodyBgColor: '#ffffff',
+    bodyTextColor: '#333',
+    borderColor: '#ccc',
+    rowHoverBgColor: '#f5f5f5',
+    alternatingRowBgColor: '#f5f5f5',
+    fontSize: 14,
+    borderRadius: 2,
+    showColumnBorders: true,
+    showRowBorders: true,
+    showHeaderRowBorder: true,
+  };
+
+  // 合并主题配置
+  const mergedTheme: TableTheme = { ...defaultTheme, ...theme };
+
+  // 获取行边框样式
+  const getRowBorderStyle = () => {
+    if (!mergedTheme.showRowBorders) return 'none';
+    
+    if (mergedTheme.rowBorderStyle) {
+      return mergedTheme.rowBorderStyle;
+    }
+    
+    const color = mergedTheme.rowBorderColor || mergedTheme.borderColor || '#ccc';
+    return `1px solid ${color}`;
+  };
+
+  // 获取列边框样式
+  const getColumnBorderStyle = () => {
+    if (!mergedTheme.showColumnBorders) return 'none';
+    
+    if (mergedTheme.columnBorderStyle) {
+      return mergedTheme.columnBorderStyle;
+    }
+    
+    const color = mergedTheme.borderColor || '#ccc';
+    return `1px solid ${color}`;
+  };
 
   const renderRow = (
     dataItem: Record<string, any>,
@@ -67,8 +116,12 @@ const TableList: FC<TableListProps> = props => {
         <div
           style={{
             display: 'flex',
-            backgroundColor: (index + fatherIndex) % 2 === 0 ? '#f5f5f5' : '#ffffff',
+            backgroundColor: (index + fatherIndex) % 2 === 0 ? mergedTheme.alternatingRowBgColor : mergedTheme.bodyBgColor,
             height: rowHeight,
+            color: mergedTheme.bodyTextColor,
+            fontSize: mergedTheme.fontSize,
+            // 使用新的行边框配置
+            borderBottom: getRowBorderStyle(),
           }}
           {...(onRow ? onRow(dataItem, index) : {})}
         >
@@ -82,6 +135,8 @@ const TableList: FC<TableListProps> = props => {
                 alignItems: 'center',
                 height: '100%',
                 whiteSpace: 'nowrap',
+                // 使用新的列边框配置
+                borderRight: getColumnBorderStyle(),
                 ...(column.style || {}),
               }}
             >
@@ -116,7 +171,7 @@ const TableList: FC<TableListProps> = props => {
           style={{
             width: '100%',
             height: 250,
-            color: 'gray',
+            color: mergedTheme.bodyTextColor,
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',

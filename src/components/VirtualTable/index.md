@@ -67,7 +67,7 @@ export default () => {
 | headerRowHeight | 表头行的高度 | `number` | `40` |
 | onRow | 行事件处理器 | `(record: any, index: any) => Record<string, any>` | - |
 | tableFixedHeight | 固定表格高度 | `number` | `48` |
-| filterColumns | 要过滤的列（仅显示这些列） | `string[]` | `[]` |
+| displayColumns | 要显示的列（仅显示这些列） | `string[]` | `[]` |
 | loading | 加载状态 | `boolean` | `false` |
 | expandable | 可展开配置 | `ExpandableProps` | - |
 

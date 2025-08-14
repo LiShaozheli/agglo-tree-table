@@ -1,4 +1,5 @@
 import React, { FC, memo, useEffect, useRef, useState } from 'react';
+import type { TableTheme } from './themes';
 
 /**
  * Props for the TableHeader component
@@ -23,6 +24,9 @@ export interface TableHeaderProps {
   /** Table container reference */
   /** 表格容器引用 */
   containerRef?: React.RefObject<HTMLDivElement>;
+  /** Table theme */
+  /** 表格主题 */
+  theme?: TableTheme;
 }
 
 /**
@@ -33,7 +37,16 @@ export interface TableHeaderProps {
  * 该组件渲染表格头部，并在滚动时使其粘性固定。
  */
 const TableHeader: FC<TableHeaderProps> = props => {
-  const { columns, headerRowHeight = 40, tableFixedHeight = 48, tableRef, columnWidth, containerRef } = props;
+  const { 
+    columns, 
+    headerRowHeight = 40, 
+    tableFixedHeight = 48, 
+    tableRef, 
+    columnWidth, 
+    containerRef,
+    theme
+  } = props;
+  
   const [headerLayer, setHeaderLayer] = useState(0);
   const [sticky, setSticky] = useState(false);
   const [tableHeaderHeight, setTableHeaderHeight] = useState(0);
@@ -44,6 +57,58 @@ const TableHeader: FC<TableHeaderProps> = props => {
   const tableHeaderRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef<HTMLDivElement>(null);
   const tableBottomRef = useRef<HTMLDivElement>(null);
+
+  // 默认主题
+  const defaultTheme: TableTheme = {
+    primaryColor: '#1890ff',
+    headerBgColor: '#f0f0f0',
+    headerTextColor: '#333',
+    bodyBgColor: '#ffffff',
+    bodyTextColor: '#333',
+    borderColor: '#ccc',
+    rowHoverBgColor: '#f5f5f5',
+    alternatingRowBgColor: '#f5f5f5',
+    fontSize: 14,
+    borderRadius: 2,
+    showColumnBorders: true,
+    showRowBorders: true,
+  };
+
+  // 合并主题配置
+  const mergedTheme: TableTheme = { ...defaultTheme, ...theme };
+
+  // 获取表头行边框样式
+  const getHeaderRowBorderStyle = () => {
+    // 表头始终显示行分割线，除非明确设置为不显示
+    if (mergedTheme.showHeaderRowBorder === false) return 'none';
+    
+    if (mergedTheme.headerRowBorderStyle) {
+      return mergedTheme.headerRowBorderStyle;
+    }
+    
+    if (mergedTheme.rowBorderStyle) {
+      return mergedTheme.rowBorderStyle;
+    }
+    
+    const color = mergedTheme.rowBorderColor || mergedTheme.borderColor || '#ccc';
+    return `1px solid ${color}`;
+  };
+
+  // 获取表头列边框样式
+  const getHeaderColumnBorderStyle = () => {
+    if (!mergedTheme.showColumnBorders) return 'none';
+    
+    if (mergedTheme.headerColumnBorderStyle) {
+      return mergedTheme.headerColumnBorderStyle;
+    }
+    
+    if (mergedTheme.columnBorderStyle) {
+      return mergedTheme.columnBorderStyle;
+    }
+    
+    const color = mergedTheme.borderColor || '#ccc';
+    return `1px solid ${color}`;
+  };
 
   // 设置表头高度
   // Set table header height
@@ -149,15 +214,20 @@ const TableHeader: FC<TableHeaderProps> = props => {
       <div
         style={{
           display: 'flex',
-          backgroundColor: '#f0f0f0',
-          color: '#333',
+          backgroundColor: mergedTheme.headerBgColor,
+          color: mergedTheme.headerTextColor,
+          fontSize: mergedTheme.fontSize,
+          fontWeight: mergedTheme.headerFontWeight || 'normal',
+          // 使用表头专用的行边框配置
+          borderBottom: getHeaderRowBorderStyle(),
         }}
       >
         {oldColumns.map((column: any) => (
           <div
             key={column.key || column.dataIndex}
             style={{
-              borderRight: column.children?.length > 0 ? '1px solid #ccc' : '0px',
+              // 使用表头专用的列边框配置
+              borderRight: getHeaderColumnBorderStyle(),
             }}
           >
             <div
@@ -188,8 +258,8 @@ const TableHeader: FC<TableHeaderProps> = props => {
         ref={positionRef}
         style={
           sticky
-            ? { height: tableHeaderHeight, backgroundColor: '#f0f0f0' }
-            : { backgroundColor: '#f0f0f0' }
+            ? { height: tableHeaderHeight, backgroundColor: mergedTheme.headerBgColor }
+            : { backgroundColor: mergedTheme.headerBgColor }
         }
       />
       {/* 添加一个隐藏的div用于检测表格底部位置 */}
@@ -214,8 +284,9 @@ const TableHeader: FC<TableHeaderProps> = props => {
                 width: tableSize.width,
                 zIndex: 10,
                 overflow: 'hidden',
-                backgroundColor: '#f0f0f0',
+                backgroundColor: mergedTheme.headerBgColor,
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                borderRadius: mergedTheme.borderRadius,
               }
             : {}
         }

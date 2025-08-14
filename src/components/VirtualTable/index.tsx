@@ -1,7 +1,9 @@
-import React, { FC, memo, ReactNode, useEffect, useRef, useState } from 'react';
+import React, { FC, memo, ReactNode, useEffect, useRef, useState, useMemo } from 'react';
 import ResizeObserver from 'rc-resize-observer';
 import TableList from './tableList';
 import TableHeader from './tableHeader';
+import { predefinedThemes, type TableTheme } from './themes';
+
 
 /**
  * Configuration for expandable rows
@@ -60,15 +62,18 @@ export interface VirtualTableProps {
   /** Fixed table height */
   /** 固定表格高度 */
   tableFixedHeight?: number;
-  /** Columns to filter (show only these) */
-  /** 要过滤的列（仅显示这些列） */
-  filterColumns?: string[];
+  /** Columns to display (show only these) */
+  /** 要显示的列（仅显示这些列） */
+  displayColumns?: string[];
   /** Loading state */
   /** 加载状态 */
   loading?: boolean;
   /** Expandable configuration */
   /** 可展开配置 */
   expandable?: ExpandableProps;
+  /** Table theme */
+  /** 表格主题 */
+  theme?: 'default' | 'antd' | 'agGrid' | TableTheme;
 }
 
 /**
@@ -98,7 +103,7 @@ const VirtualTable: FC<VirtualTableProps> = props => {
     headerRowHeight = 40,
     onRow,
     tableFixedHeight = 48,
-    filterColumns = [],
+    displayColumns,
     loading = false,
     expandable: {
       indentSize = 15,
@@ -110,6 +115,7 @@ const VirtualTable: FC<VirtualTableProps> = props => {
       expandColumnWidth = 150,
       expandColumnTitle,
     } = {},
+    theme = 'default',
   } = props;
 
   const [expandedRowKeys, setExpandedRowKeys] = useState(defaultExpandedRowKeys || []);
@@ -118,6 +124,9 @@ const VirtualTable: FC<VirtualTableProps> = props => {
   const [tableWidth, setTableWidth] = useState(0);
   const [newColumnsWidth, setNewColumnsWidth] = useState<Record<string, number>>({});
   const tableRef = useRef<HTMLDivElement>(null);
+
+  // 处理主题配置
+  const tableTheme: TableTheme = typeof theme === 'string' ? predefinedThemes[theme] : { ...predefinedThemes.default, ...theme };
 
   const isOrNotExpend = (key: string, expendArray: string[]) => {
     if (expendArray.includes(key)) {
@@ -159,7 +168,7 @@ const VirtualTable: FC<VirtualTableProps> = props => {
           style={{
             paddingLeft: Layer * indentSize,
             width: '100%',
-            color: '#4bb7fb',
+            color: tableTheme.primaryColor, // 使用主题中的主色调替换硬编码颜色
             cursor: 'pointer',
           }}
         >
@@ -169,18 +178,23 @@ const VirtualTable: FC<VirtualTableProps> = props => {
     },
   };
 
-  const getColumns = (cols: any[], filterCols: string[]): any[] => {
+  const getColumns = (cols: any[], displayCols?: string[]): any[] => {
+    // 如果没有指定 displayColumns，则显示所有列
+    if (!displayCols || displayCols.length === 0) {
+      return cols;
+    }
+    
     const newColumns: any[] = [];
     cols.forEach(column => {
       if (column.children?.length > 0) {
-        const children = getColumns(column.children, filterCols);
+        const children = getColumns(column.children, displayCols);
         if (children.length > 0) {
           newColumns.push({
             ...column,
             children,
           });
         }
-      } else if (filterCols.includes(column.dataIndex)) {
+      } else if (displayCols.includes(column.dataIndex)) {
         newColumns.push(column);
       }
     });
@@ -189,12 +203,12 @@ const VirtualTable: FC<VirtualTableProps> = props => {
 
   useEffect(() => {
     if (expandRowByClick) {
-      const Columns = [expandColum, ...getColumns(columns, filterColumns)];
+      const Columns = [expandColum, ...getColumns(columns, displayColumns)];
       setOriginalColumns(Columns);
     } else {
-      setOriginalColumns(getColumns(columns, filterColumns));
+      setOriginalColumns(getColumns(columns, displayColumns));
     }
-  }, [columns, filterColumns, expandRowByClick]);
+  }, [columns, displayColumns, expandRowByClick]);
 
   const getNewCloumns = (column: any[]) => {
     const colsWidth: Record<string, number> = {};
@@ -209,31 +223,36 @@ const VirtualTable: FC<VirtualTableProps> = props => {
           cols = [...cols, ...getCol(column.children)];
         } else {
           cols.push(column);
-          colsWidth[column.dataIndex] = column.width;
-          if (!column.width) {
-            colsNoWidth[column.dataIndex] = column.width;
+          if (column.width) {
+            colsWidth[column.dataIndex] = column.width;
+            totolWidth += column.width;
+          } else {
+            colsNoWidth[column.dataIndex] = 0; // 先设置为0，后续再计算
           }
-          totolWidth += column.width || 0;
         }
       });
       return cols;
     };
     const newCloumns = getCol(column);
 
-    if (totolWidth < tableWidth) {
-      if (Object.keys(colsNoWidth).length > 0) {
-        const width = Math.floor((tableWidth - totolWidth) / Object.keys(colsNoWidth).length);
-        Object.keys(colsNoWidth).forEach(key => {
-          colsNoWidth[key] = width;
-        });
+    // 修复：正确处理没有指定宽度的列
+    if (Object.keys(colsNoWidth).length > 0) {
+      // 即使tableWidth为0，也要给列分配默认宽度
+      const availableWidth = tableWidth > 0 ? tableWidth : 800; // 默认容器宽度800px
+      const remainingWidth = Math.max(availableWidth - totolWidth, 0);
+      const widthPerColumn = Math.floor(remainingWidth / Object.keys(colsNoWidth).length) || 100; // 默认100px
+      Object.keys(colsNoWidth).forEach(key => {
+        colsNoWidth[key] = widthPerColumn;
+        colsWidth[key] = widthPerColumn;
+      });
+    }
 
-        Object.assign(colsWidth, colsNoWidth);
-      } else {
-        const proportion = totolWidth / tableWidth;
-        Object.keys(colsWidth).forEach(key => {
-          colsWidth[key] = Math.floor(colsWidth[key] / proportion);
-        });
-      }
+    // 如果总宽度为0（初始状态），则给每列一个默认宽度
+    if (tableWidth === 0 && Object.keys(colsWidth).length === 0 && newCloumns.length > 0) {
+      const defaultWidth = 150;
+      newCloumns.forEach(col => {
+        colsWidth[col.dataIndex] = col.width || defaultWidth;
+      });
     }
 
     return { colsWidth, newCloumns };
@@ -260,6 +279,7 @@ const VirtualTable: FC<VirtualTableProps> = props => {
             tableRef={tableRef}
             columnWidth={newColumnsWidth}
             containerRef={tableRef} // 传递容器引用
+            theme={tableTheme}
           />
           {loading ? (
             <div style={{ textAlign: 'center', padding: '20px' }}>Loading...</div>
@@ -274,6 +294,7 @@ const VirtualTable: FC<VirtualTableProps> = props => {
               childrenColumnName={childrenColumnName}
               onRow={onRow}
               columnWidth={newColumnsWidth}
+              theme={tableTheme}
             />
           )}
         </div>

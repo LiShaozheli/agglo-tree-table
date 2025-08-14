@@ -32,6 +32,9 @@ export interface AggloTreeTableProps extends VirtualTableProps {
   /** Sort function for tree nodes */
   /** 树节点排序函数 */
   sort?: (a: any, b: any) => number;
+  /** Columns to display in the table */
+  /** 表格中要显示的列 */
+  displayColumns?: string[];
 }
 
 /**
@@ -66,7 +69,7 @@ const AggloTreeTable: FC<AggloTreeTableProps> = props => {
     rowKey,
     AggregateKeys,
     tableFixedHeight,
-    filterColumns = [],
+    displayColumns,
     loading,
     expandable,
     sort = () => 1,
@@ -98,12 +101,12 @@ const AggloTreeTable: FC<AggloTreeTableProps> = props => {
 
   return (
     <VirtualTable
+      {...props}
       loading={loading}
       columns={columns}
       dataSource={newDataSource}
       rowKey={rowKey}
       tableFixedHeight={tableFixedHeight}
-      filterColumns={filterColumns}
       expandable={{
         expandRowByClick,
         ...expandable,

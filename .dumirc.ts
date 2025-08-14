@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   title: 'AggloTreeTable Component',
-  logo: './public/logo.png',
+  // logo: './public/logo.png',
   outputPath: 'docs-dist',
   resolve: {
     docDirs: ['docs'],
