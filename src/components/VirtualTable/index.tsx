@@ -259,6 +259,7 @@ const VirtualTable: FC<VirtualTableProps> = props => {
             tableFixedHeight={tableFixedHeight}
             tableRef={tableRef}
             columnWidth={newColumnsWidth}
+            containerRef={tableRef} // 传递容器引用
           />
           {loading ? (
             <div style={{ textAlign: 'center', padding: '20px' }}>Loading...</div>

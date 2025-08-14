@@ -20,6 +20,9 @@ export interface TableHeaderProps {
   /** Column widths */
   /** 列宽度 */
   columnWidth: Record<string, number>;
+  /** Table container reference */
+  /** 表格容器引用 */
+  containerRef?: React.RefObject<HTMLDivElement>;
 }
 
 /**
@@ -30,15 +33,17 @@ export interface TableHeaderProps {
  * 该组件渲染表格头部，并在滚动时使其粘性固定。
  */
 const TableHeader: FC<TableHeaderProps> = props => {
-  const { columns, headerRowHeight = 40, tableFixedHeight = 48, tableRef, columnWidth } = props;
+  const { columns, headerRowHeight = 40, tableFixedHeight = 48, tableRef, columnWidth, containerRef } = props;
   const [headerLayer, setHeaderLayer] = useState(0);
   const [sticky, setSticky] = useState(false);
   const [tableHeaderHeight, setTableHeaderHeight] = useState(0);
   const [tableSize, setTableSize] = useState<Record<string, any>>({});
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [stickyOffset, setStickyOffset] = useState(0);
 
   const tableHeaderRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef<HTMLDivElement>(null);
+  const tableBottomRef = useRef<HTMLDivElement>(null);
 
   // 设置表头高度
   // Set table header height
@@ -47,14 +52,53 @@ const TableHeader: FC<TableHeaderProps> = props => {
     setTableHeaderHeight(tableHeaderSize?.height || 0);
   }, [tableHeaderRef, sticky]);
 
+  // 计算粘滞偏移量（考虑页面上其他粘滞元素）
+  // Calculate sticky offset (considering other sticky elements on the page)
+  const calculateStickyOffset = () => {
+    // 查找页面上所有粘滞元素并计算它们的总高度
+    // Find all sticky elements on the page and calculate their total height
+    const stickyElements = document.querySelectorAll('[style*="position: sticky"], [style*="position: fixed"]');
+    let offset = 0;
+    
+    stickyElements.forEach(element => {
+      const elementStyle = window.getComputedStyle(element);
+      const isSticky = elementStyle.position === 'sticky' || elementStyle.position === 'fixed';
+      const isTopSticky = elementStyle.top === '0px' || elementStyle.top === '0';
+      
+      if (isSticky && isTopSticky) {
+        const rect = element.getBoundingClientRect();
+        offset += rect.height;
+      }
+    });
+    
+    return offset;
+  };
+
   // 设置表头是否为粘滞状态
   // Set whether the header is sticky
   const bindHandleScroll = () => {
     const positionTypes = positionRef?.current?.getBoundingClientRect();
+    const containerTypes = containerRef?.current?.getBoundingClientRect();
+    const currentStickyOffset = calculateStickyOffset();
+    setStickyOffset(currentStickyOffset);
 
-    if (positionTypes?.top !== undefined && positionTypes?.top < tableFixedHeight && !sticky) {
-      setSticky(true);
-    } else if (positionTypes?.top !== undefined && positionTypes?.top > tableFixedHeight && sticky) {
+    // 当表头滚动到视口顶部（考虑其他粘滞元素）时，激活粘滞状态
+    // Activate sticky state when the header scrolls to the top of the viewport (considering other sticky elements)
+    if (positionTypes?.top !== undefined && positionTypes?.top < currentStickyOffset && !sticky) {
+      // 同时检查表格容器底部是否还在视口内，避免表格已经滚出视口的情况
+      // Also check if the table container bottom is still in the viewport to avoid the case where the table has scrolled out of the viewport
+      if (containerTypes?.bottom !== undefined && containerTypes?.bottom > currentStickyOffset) {
+        setSticky(true);
+      }
+    } 
+    // 当表头重新回到原来位置时，取消粘滞状态
+    // Cancel sticky state when the header returns to its original position
+    else if (positionTypes?.top !== undefined && positionTypes?.top >= currentStickyOffset && sticky) {
+      setSticky(false);
+    }
+    // 当表格容器底部滚动到视口顶部以上时，取消粘滞状态
+    // Cancel sticky state when the table container bottom scrolls above the top of the viewport
+    else if (containerTypes?.bottom !== undefined && containerTypes?.bottom < currentStickyOffset && sticky) {
       setSticky(false);
     }
   };
@@ -148,17 +192,30 @@ const TableHeader: FC<TableHeaderProps> = props => {
             : { backgroundColor: '#f0f0f0' }
         }
       />
+      {/* 添加一个隐藏的div用于检测表格底部位置 */}
+      {/* Add a hidden div to detect the table bottom position */}
+      <div
+        ref={tableBottomRef}
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          height: 1,
+          width: '100%',
+          visibility: 'hidden',
+        }}
+      />
       <div
         style={
           sticky
             ? {
                 position: 'fixed',
-                top: tableFixedHeight,
+                top: stickyOffset,
                 left: tableSize.left,
                 width: tableSize.width,
                 zIndex: 10,
                 overflow: 'hidden',
                 backgroundColor: '#f0f0f0',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
               }
             : {}
         }
