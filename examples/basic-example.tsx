@@ -87,7 +87,7 @@ const tableColumns = [
 ];
 
 const BasicExample = () => {
-  const [theme, setTheme] = useState('default');
+  const [theme, setTheme] = useState<'default' | 'antd' | 'agGrid'>('default');
 
   return (
     <div style={{ padding: '20px' }}>
@@ -95,8 +95,8 @@ const BasicExample = () => {
       <h1>AggloTreeTable 基础示例</h1>
       
       <div style={{ marginBottom: '20px' }}>
-        <label>选择主题: </label>
-        <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+        <label htmlFor="theme-select">选择主题: </label>
+        <select id="theme-select" value={theme} onChange={(e) => setTheme(e.target.value as 'default' | 'antd' | 'agGrid')}>
           <option value="default">默认主题</option>
           <option value="antd">Ant Design 风格</option>
           <option value="agGrid">AG Grid 风格</option>

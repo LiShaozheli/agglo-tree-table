@@ -427,6 +427,33 @@ export default () => (
 ### 列样式自定义
 
 ```tsx
+import React from 'react';
+import { AggloTreeTable } from 'agglo-tree-table';
+
+const data = [
+  {
+    id: '1',
+    name: 'Apple Inc.',
+    contract: 'AAPL',
+    pv: 10000,
+    delta: 500,
+  },
+  {
+    id: '2',
+    name: 'Apple Inc.',
+    contract: 'AAPL',
+    pv: 15000,
+    delta: 750,
+  },
+  {
+    id: '3',
+    name: 'Microsoft Corp.',
+    contract: 'MSFT',
+    pv: 20000,
+    delta: 1000,
+  },
+];
+
 const columns = [
   {
     title: 'Instrument',
@@ -444,8 +471,60 @@ const columns = [
       color: '#333',
     }
   },
-  // 其他列...
+  {
+    title: 'Contract',
+    dataIndex: 'contract',
+    width: 100,
+    headerStyle: {
+      backgroundColor: '#fafafa',
+      color: '#000000d9',
+    },
+    style: {
+      backgroundColor: '#ffffff',
+      fontWeight: 'bold',
+    }
+  },
+  {
+    title: 'PV',
+    dataIndex: 'pv',
+    width: 120,
+    headerStyle: {
+      backgroundColor: '#52c41a',
+      color: '#ffffff',
+      textAlign: 'right',
+    },
+    style: {
+      backgroundColor: '#f6ffed',
+      color: '#52c41a',
+      textAlign: 'right',
+    }
+  },
+  {
+    title: 'Delta',
+    dataIndex: 'delta',
+    width: 120,
+    headerStyle: {
+      backgroundColor: '#722ed1',
+      color: '#ffffff',
+      textAlign: 'right',
+    },
+    style: {
+      backgroundColor: '#f9f0ff',
+      color: '#722ed1',
+      textAlign: 'right',
+    }
+  },
 ];
+
+export default () => (
+  <AggloTreeTable
+    columns={columns}
+    dataSource={data}
+    groupKeys={['name']}
+    rowKey="id"
+    tableFixedHeight={300}
+  />
+);
 ```
 
 通过这些方式，你可以完全控制 AggloTreeTable 的外观，以适应你的应用设计风格。

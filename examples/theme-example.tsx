@@ -1,6 +1,70 @@
 import React, { useState } from 'react';
 import { AggloTreeTable } from 'agglo-tree-table';
 
+// 通过接口定义复制TableTheme结构
+interface TableTheme {
+  /** Primary color */
+  /** 主色调 */
+  primaryColor?: string;
+  /** Header background color */
+  /** 表头背景色 */
+  headerBgColor?: string;
+  /** Header text color */
+  /** 表头文字颜色 */
+  headerTextColor?: string;
+  /** Body background color */
+  /** 表格主体背景色 */
+  bodyBgColor?: string;
+  /** Body text color */
+  /** 表格主体文字颜色 */
+  bodyTextColor?: string;
+  /** Border color */
+  /** 边框颜色 */
+  borderColor?: string;
+  /** Row hover background color */
+  /** 行悬停背景色 */
+  rowHoverBgColor?: string;
+  /** Alternating row background color */
+  /** 交替行背景色 */
+  alternatingRowBgColor?: string;
+  /** Font size */
+  /** 字体大小 */
+  fontSize?: number;
+  /** Border radius */
+  /** 边框圆角 */
+  borderRadius?: number;
+  /** Header font weight */
+  /** 表头字体粗细 */
+  headerFontWeight?: number | string;
+  /** Show column borders */
+  /** 是否显示列分割线 */
+  showColumnBorders?: boolean;
+  /** Show row borders */
+  /** 是否显示行分割线 */
+  showRowBorders?: boolean;
+  /** Show header row border */
+  /** 是否显示表头行分割线 */
+  showHeaderRowBorder?: boolean;
+  /** Column border color */
+  /** 列分割线颜色 */
+  columnBorderColor?: string;
+  /** Row border color */
+  /** 行分割线颜色 */
+  rowBorderColor?: string;
+  /** Column border style */
+  /** 列分割线样式 */
+  columnBorderStyle?: string;
+  /** Row border style */
+  /** 行分割线样式 */
+  rowBorderStyle?: string;
+  /** Header column border style */
+  /** 表头列分割线样式 */
+  headerColumnBorderStyle?: string;
+  /** Header row border style */
+  /** 表头行分割线样式 */
+  headerRowBorderStyle?: string;
+}
+
 // Sample data
 // 示例数据
 const sampleData = [
@@ -107,7 +171,7 @@ const tableColumns = [
 ];
 
 // 自定义主题配置
-const customThemes = {
+const customThemes: Record<string, TableTheme> = {
   dark: {
     primaryColor: '#007bff',
     headerBgColor: '#212529',
@@ -147,13 +211,25 @@ const customThemes = {
 };
 
 const ThemeExample = () => {
-  const [theme, setTheme] = useState('default');
-  const [customTheme, setCustomTheme] = useState(null);
+  const [theme, setTheme] = useState<'default' | 'antd' | 'agGrid' | 'custom-dark' | 'custom-colorful' | 'custom-corporate'>('default');
 
-  const handleThemeChange = (e) => {
-    const selectedTheme = e.target.value;
+  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedTheme = e.target.value as 'default' | 'antd' | 'agGrid' | 'custom-dark' | 'custom-colorful' | 'custom-corporate';
     setTheme(selectedTheme);
-    setCustomTheme(selectedTheme.startsWith('custom-') ? customThemes[selectedTheme.replace('custom-', '')] : null);
+  };
+
+  // 确定传递给组件的实际主题值
+  const getTableTheme = (): 'default' | 'antd' | 'agGrid' | TableTheme | undefined => {
+    if (theme.startsWith('custom-')) {
+      const themeName = theme.replace('custom-', '');
+      return customThemes[themeName];
+    }
+    
+    if (theme === 'default' || theme === 'antd' || theme === 'agGrid') {
+      return theme;
+    }
+    
+    return 'default';
   };
 
   return (
@@ -162,8 +238,8 @@ const ThemeExample = () => {
       <h2>AggloTreeTable 主题示例</h2>
       
       <div style={{ marginBottom: '20px' }}>
-        <label>选择主题: </label>
-        <select value={theme} onChange={handleThemeChange}>
+        <label htmlFor="theme-selector">选择主题: </label>
+        <select id="theme-selector" value={theme} onChange={handleThemeChange}>
           <option value="default">默认主题</option>
           <option value="antd">Ant Design 风格</option>
           <option value="agGrid">AG Grid 风格</option>
@@ -195,7 +271,7 @@ const ThemeExample = () => {
             'remainingNotional',
           ],
         }}
-        theme={customTheme || theme}
+        theme={getTableTheme()}
       />
     </div>
   );
