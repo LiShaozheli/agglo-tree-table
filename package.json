@@ -1,0 +1,58 @@
+{
+  "name": "agglo-tree-table",
+  "version": "1.0.0",
+  "description": "A React tree table component with aggregation capabilities for financial data | 一个支持金融数据聚合功能的 React 树形表格组件",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "test": "jest",
+    "docs": "typedoc --out docs src",
+    "docs:dev": "dumi dev",
+    "docs:build": "dumi build"
+  },
+  "keywords": [
+    "react",
+    "table",
+    "tree",
+    "aggregation",
+    "financial-data",
+    "virtual-table",
+    "react组件",
+    "表格",
+    "树形结构",
+    "数据聚合",
+    "金融数据",
+    "虚拟表格"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.0.0",
+    "rc-resize-observer": "^1.0.0",
+    "rc-virtual-list": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "antd": "^4.0.0",
+    "babel-plugin-import": "^1.13.8",
+    "dumi": "^2.0.0",
+    "rollup-plugin-peer-deps-external": "^2.2.0",
+    "typedoc": "^0.22.0",
+    "typescript": "^4.5.0",
+    "vite": "^4.0.0",
+    "vite-plugin-dts": "^3.0.0"
+  }
+}

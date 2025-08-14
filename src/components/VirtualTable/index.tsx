@@ -1,0 +1,284 @@
+import React, { FC, memo, ReactNode, useEffect, useRef, useState } from 'react';
+import ResizeObserver from 'rc-resize-observer';
+import TableList from './tableList';
+import TableHeader from './tableHeader';
+
+/**
+ * Configuration for expandable rows
+ * 可展开行配置
+ */
+export interface ExpandableProps {
+  /** Default expanded row keys */
+  /** 默认展开的行键 */
+  defaultExpandedRowKeys?: string[];
+  /** Children column name in data */
+  /** 数据中子项列的名称 */
+  childrenColumnName?: string;
+  /** Data index for expand column */
+  /** 展开列的数据索引 */
+  expandDataIndex?: string;
+  /** Whether to expand row by clicking anywhere */
+  /** 是否通过点击任意位置展开行 */
+  expandRowByClick?: boolean;
+  /** Indent size for each level */
+  /** 每级的缩进大小 */
+  indentSize?: number;
+  /** Width of expand column */
+  /** 展开列的宽度 */
+  expandColumnWidth?: number;
+  /** Title of expand column */
+  /** 展开列的标题 */
+  expandColumnTitle?: ReactNode;
+  /** Custom expand icon renderer */
+  /** 自定义展开图标渲染器 */
+  expandIcon?: (isExpend: boolean, value: ReactNode, record: Record<string, any>) => ReactNode;
+}
+
+/**
+ * Props for the VirtualTable component
+ * VirtualTable 组件的 Props
+ */
+export interface VirtualTableProps {
+  /** Unique row key */
+  /** 唯一行键 */
+  rowKey: string;
+  /** Table columns configuration */
+  /** 表格列配置 */
+  columns?: any[];
+  /** Table data source */
+  /** 表格数据源 */
+  dataSource?: Array<Record<string, any>>;
+  /** Height of each row */
+  /** 每行的高度 */
+  rowHeight?: number;
+  /** Height of header row */
+  /** 表头行的高度 */
+  headerRowHeight?: number;
+  /** Row event handler */
+  /** 行事件处理器 */
+  onRow?: (record: any, index: any) => Record<string, any>;
+  /** Fixed table height */
+  /** 固定表格高度 */
+  tableFixedHeight?: number;
+  /** Columns to filter (show only these) */
+  /** 要过滤的列（仅显示这些列） */
+  filterColumns?: string[];
+  /** Loading state */
+  /** 加载状态 */
+  loading?: boolean;
+  /** Expandable configuration */
+  /** 可展开配置 */
+  expandable?: ExpandableProps;
+}
+
+/**
+ * A virtualized table component for efficiently rendering large datasets.
+ * 一个用于高效渲染大型数据集的虚拟化表格组件。
+ * 
+ * This component uses virtualization to render only visible rows, improving performance
+ * with large datasets. It also supports expandable rows and sticky headers.
+ * 该组件使用虚拟化技术仅渲染可见行，从而提高大型数据集的性能。它还支持可展开行和粘性表头。
+ * 
+ * @example
+ * ```tsx
+ * <VirtualTable
+ *   columns={columns}
+ *   dataSource={data}
+ *   rowKey="id"
+ *   tableFixedHeight={300}
+ * />
+ * ```
+ */
+const VirtualTable: FC<VirtualTableProps> = props => {
+  const {
+    rowKey,
+    columns = [],
+    dataSource = [],
+    rowHeight = 40,
+    headerRowHeight = 40,
+    onRow,
+    tableFixedHeight = 48,
+    filterColumns = [],
+    loading = false,
+    expandable: {
+      indentSize = 15,
+      expandRowByClick = false,
+      defaultExpandedRowKeys,
+      expandDataIndex = 'expand',
+      childrenColumnName = 'children',
+      expandIcon,
+      expandColumnWidth = 150,
+      expandColumnTitle,
+    } = {},
+  } = props;
+
+  const [expandedRowKeys, setExpandedRowKeys] = useState(defaultExpandedRowKeys || []);
+  const [originalColumns, setOriginalColumns] = useState<any[]>([]);
+  const [newColumn, setNewColumn] = useState<any[]>([]);
+  const [tableWidth, setTableWidth] = useState(0);
+  const [newColumnsWidth, setNewColumnsWidth] = useState<Record<string, number>>({});
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  const isOrNotExpend = (key: string, expendArray: string[]) => {
+    if (expendArray.includes(key)) {
+      const newExpendArray = expendArray.filter(item => item !== key);
+      setExpandedRowKeys(newExpendArray);
+      return;
+    }
+    const newExpendArray = [...expendArray];
+    newExpendArray.push(key);
+    setExpandedRowKeys(newExpendArray);
+  };
+
+  const expandColum = {
+    width: expandColumnWidth,
+    title: expandColumnTitle,
+    dataIndex: expandDataIndex,
+    headerStyle: {
+
+    },
+    render: (value: any, record: any, index: number, expanded: string[], Layer: number) => {
+      const isExpend = expanded.includes(record[rowKey]);
+      const getChiild = (data: any) => {
+        if (!data.children) return null;
+        if (expandIcon) return expandIcon(isExpend, data[expandDataIndex], data);
+        return (
+          <>
+            {isExpend ? (
+              <span style={{ transform: 'rotate(90deg)', display: 'inline-block' }}>▶</span>
+            ) : (
+              <span>▶</span>
+            )}
+            {`${data[expandDataIndex]}(${data.length || data.children.length})`}
+          </>
+        );
+      };
+      return (
+        <div
+          onClick={() => isOrNotExpend(record[rowKey], expanded)}
+          style={{
+            paddingLeft: Layer * indentSize,
+            width: '100%',
+            color: '#4bb7fb',
+            cursor: 'pointer',
+          }}
+        >
+          {getChiild(record)}
+        </div>
+      );
+    },
+  };
+
+  const getColumns = (cols: any[], filterCols: string[]): any[] => {
+    const newColumns: any[] = [];
+    cols.forEach(column => {
+      if (column.children?.length > 0) {
+        const children = getColumns(column.children, filterCols);
+        if (children.length > 0) {
+          newColumns.push({
+            ...column,
+            children,
+          });
+        }
+      } else if (filterCols.includes(column.dataIndex)) {
+        newColumns.push(column);
+      }
+    });
+    return newColumns;
+  };
+
+  useEffect(() => {
+    if (expandRowByClick) {
+      const Columns = [expandColum, ...getColumns(columns, filterColumns)];
+      setOriginalColumns(Columns);
+    } else {
+      setOriginalColumns(getColumns(columns, filterColumns));
+    }
+  }, [columns, filterColumns, expandRowByClick]);
+
+  const getNewCloumns = (column: any[]) => {
+    const colsWidth: Record<string, number> = {};
+    const colsNoWidth: Record<string, number> = {};
+    let totolWidth = 0;
+
+    const getCol = (oldColumns: any[]): any[] => {
+      let cols: any[] = [];
+
+      oldColumns.forEach(column => {
+        if (column.children?.length > 0) {
+          cols = [...cols, ...getCol(column.children)];
+        } else {
+          cols.push(column);
+          colsWidth[column.dataIndex] = column.width;
+          if (!column.width) {
+            colsNoWidth[column.dataIndex] = column.width;
+          }
+          totolWidth += column.width || 0;
+        }
+      });
+      return cols;
+    };
+    const newCloumns = getCol(column);
+
+    if (totolWidth < tableWidth) {
+      if (Object.keys(colsNoWidth).length > 0) {
+        const width = Math.floor((tableWidth - totolWidth) / Object.keys(colsNoWidth).length);
+        Object.keys(colsNoWidth).forEach(key => {
+          colsNoWidth[key] = width;
+        });
+
+        Object.assign(colsWidth, colsNoWidth);
+      } else {
+        const proportion = totolWidth / tableWidth;
+        Object.keys(colsWidth).forEach(key => {
+          colsWidth[key] = Math.floor(colsWidth[key] / proportion);
+        });
+      }
+    }
+
+    return { colsWidth, newCloumns };
+  };
+
+  useEffect(() => {
+    const { colsWidth, newCloumns } = getNewCloumns(originalColumns);
+    setNewColumn(newCloumns);
+    setNewColumnsWidth(colsWidth);
+  }, [originalColumns, tableWidth]);
+
+  return (
+    <ResizeObserver
+      onResize={({ width }) => {
+        setTableWidth(width);
+      }}
+    >
+      <div style={{ overflowX: 'scroll', overflowY: 'visible', zIndex: 10 }} ref={tableRef}>
+        <div style={{ minWidth: 'max-content' }}>
+          <TableHeader
+            columns={originalColumns}
+            headerRowHeight={headerRowHeight}
+            tableFixedHeight={tableFixedHeight}
+            tableRef={tableRef}
+            columnWidth={newColumnsWidth}
+          />
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '20px' }}>Loading...</div>
+          ) : (
+            <TableList
+              rowKey={rowKey}
+              dataSource={dataSource}
+              columns={newColumn}
+              expandedRowKeys={expandedRowKeys}
+              expandRowByClick={expandRowByClick}
+              rowHeight={rowHeight}
+              childrenColumnName={childrenColumnName}
+              onRow={onRow}
+              columnWidth={newColumnsWidth}
+            />
+          )}
+        </div>
+      </div>
+    </ResizeObserver>
+  );
+};
+
+export default memo(VirtualTable);
