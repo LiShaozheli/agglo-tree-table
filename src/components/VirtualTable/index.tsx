@@ -86,6 +86,9 @@ export interface VirtualTableProps {
   /** Table theme */
   /** 表格主题 */
   theme?: 'default' | 'antd' | 'agGrid' | TableTheme;
+  /** Whether column resizing is enabled */
+  /** 是否启用列宽调整功能 */
+  resizable?: boolean;
 }
 
 // 添加VirtualTable的公开方法接口
@@ -141,6 +144,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
       onCollapseAll,
     } = {},
     theme = 'default',
+    resizable = true, // 默认启用列宽调整功能
   } = props;
 
   const [expandedRowKeys, setExpandedRowKeys] = useState(defaultExpandedRowKeys || []);
@@ -148,7 +152,17 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   const [newColumn, setNewColumn] = useState<any[]>([]);
   const [tableWidth, setTableWidth] = useState(0);
   const [newColumnsWidth, setNewColumnsWidth] = useState<Record<string, number>>({});
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({}); // 添加列宽状态
+  
   const tableRef = useRef<HTMLDivElement>(null);
+
+  // 处理列宽变化
+  const handleColumnWidthChange = (dataIndex: string, newWidth: number) => {
+    setColumnWidths(prev => ({
+      ...prev,
+      [dataIndex]: newWidth
+    }));
+  };
 
   // 处理主题配置
   const tableTheme: TableTheme = typeof theme === 'string' ? predefinedThemes[theme] : { ...predefinedThemes.default, ...theme };
@@ -417,50 +431,27 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     }
   }, [columns, displayColumns, expandRowByClick, showExpandAll, expandColumnTitle, tableTheme, isAllExpanded, isAllCollapsed]);
 
-  const getNewCloumns = (column: any[]) => {
+  const getNewCloumns = (cols: any[]) => {
     const colsWidth: Record<string, number> = {};
-    const colsNoWidth: Record<string, number> = {};
-    let totolWidth = 0;
+    const newCloumns: any[] = [];
 
-    const getCol = (oldColumns: any[]): any[] => {
-      let cols: any[] = [];
+    cols.forEach((item) => {
+      // 处理列宽 - 优先使用用户调整的宽度
+      let width = item.width || 100;
+      if (columnWidths[item.dataIndex]) {
+        width = columnWidths[item.dataIndex];
+      }
+      colsWidth[item.dataIndex] = width;
 
-      oldColumns.forEach(column => {
-        if (column.children?.length > 0) {
-          cols = [...cols, ...getCol(column.children)];
-        } else {
-          cols.push(column);
-          if (column.width) {
-            colsWidth[column.dataIndex] = column.width;
-            totolWidth += column.width;
-          } else {
-            colsNoWidth[column.dataIndex] = 0; // 先设置为0，后续再计算
-          }
-        }
-      });
-      return cols;
-    };
-    const newCloumns = getCol(column);
-
-    // 修复：正确处理没有指定宽度的列
-    if (Object.keys(colsNoWidth).length > 0) {
-      // 即使tableWidth为0，也要给列分配默认宽度
-      const availableWidth = tableWidth > 0 ? tableWidth : 800; // 默认容器宽度800px
-      const remainingWidth = Math.max(availableWidth - totolWidth, 0);
-      const widthPerColumn = Math.floor(remainingWidth / Object.keys(colsNoWidth).length) || 100; // 默认100px
-      Object.keys(colsNoWidth).forEach(key => {
-        colsNoWidth[key] = widthPerColumn;
-        colsWidth[key] = widthPerColumn;
-      });
-    }
-
-    // 如果总宽度为0（初始状态），则给每列一个默认宽度
-    if (tableWidth === 0 && Object.keys(colsWidth).length === 0 && newCloumns.length > 0) {
-      const defaultWidth = 150;
-      newCloumns.forEach(col => {
-        colsWidth[col.dataIndex] = col.width || defaultWidth;
-      });
-    }
+      const newItem = { ...item, width };
+      if (item.children) {
+        const { colsWidth: childWidths, newCloumns: childColumns } = getNewCloumns(item.children);
+        newItem.children = childColumns;
+        // 合并子列的宽度信息
+        Object.assign(colsWidth, childWidths);
+      }
+      newCloumns.push(newItem);
+    });
 
     return { colsWidth, newCloumns };
   };
@@ -469,7 +460,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     const { colsWidth, newCloumns } = getNewCloumns(originalColumns);
     setNewColumn(newCloumns);
     setNewColumnsWidth(colsWidth);
-  }, [originalColumns, tableWidth]);
+  }, [originalColumns, tableWidth, columnWidths]); // 添加columnWidths依赖
 
   return (
     <ResizeObserver
@@ -487,6 +478,8 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
             columnWidth={newColumnsWidth}
             containerRef={tableRef} // 传递容器引用
             theme={tableTheme}
+            onColumnWidthChange={handleColumnWidthChange}
+            resizable={resizable}
           />
           {loading ? (
             <div className="virtual-table-loading">Loading...</div>

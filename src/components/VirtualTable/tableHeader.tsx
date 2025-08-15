@@ -29,6 +29,12 @@ export interface TableHeaderProps {
   /** Table theme */
   /** 表格主题 */
   theme?: TableTheme;
+  /** Callback when column width changes */
+  /** 列宽度变化时的回调 */
+  onColumnWidthChange?: (dataIndex: string, newWidth: number) => void;
+  /** Whether column resizing is enabled */
+  /** 是否启用列宽调整功能 */
+  resizable?: boolean;
 }
 
 /**
@@ -46,7 +52,9 @@ const TableHeader: FC<TableHeaderProps> = props => {
     tableRef, 
     columnWidth, 
     containerRef,
-    theme
+    theme,
+    onColumnWidthChange,
+    resizable = true // 默认启用列宽调整功能
   } = props;
   
   const [headerLayer, setHeaderLayer] = useState(0);
@@ -212,6 +220,30 @@ const TableHeader: FC<TableHeaderProps> = props => {
 
   const renderHeader = (oldColumns: Record<string, any>, layer = 0) => {
     if (layer > headerLayer) setHeaderLayer(layer);
+    
+    // 列宽调整处理函数
+    const handleResizeStart = (dataIndex: string, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const startX = e.clientX;
+      const startWidth = columnWidth[dataIndex] || 100;
+      
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const diff = moveEvent.clientX - startX;
+        const newWidth = Math.max(50, startWidth + diff); // 最小宽度50px
+        onColumnWidthChange?.(dataIndex, newWidth);
+      };
+
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    };
+
     return (
       <div
         style={{
@@ -230,11 +262,13 @@ const TableHeader: FC<TableHeaderProps> = props => {
             style={{
               // 使用表头专用的列边框配置
               borderRight: getHeaderColumnBorderStyle(),
+              position: 'relative',
+              width: columnWidth[column.dataIndex] || column.width,
             }}
           >
             <div
               style={{
-                width: columnWidth[column.dataIndex] || column.width,
+                width: '100%',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -250,6 +284,28 @@ const TableHeader: FC<TableHeaderProps> = props => {
             >
               {column.title}
             </div>
+            {/* 列宽调整手柄 - 仅在启用时渲染 */}
+            {resizable && (
+              <div
+                onMouseDown={(e) => handleResizeStart(column.dataIndex, e)}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: '5px',
+                  cursor: 'col-resize',
+                  backgroundColor: 'transparent',
+                  zIndex: 1,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = mergedTheme.primaryColor || '#1890ff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              />
+            )}
             {column.children?.length > 0 && renderHeader(column.children, layer + 1)}
           </div>
         ))}

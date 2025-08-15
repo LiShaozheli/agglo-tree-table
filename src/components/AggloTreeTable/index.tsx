@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import VirtualTable, { type VirtualTableProps, type VirtualTableHandles } from '../VirtualTable';
 import { TreeClass } from '../../utils/treeClass';
 import ColumnManager from './columnManager';
@@ -35,6 +35,9 @@ export interface AggloTreeTableProps extends VirtualTableProps {
     addBNkeys?: string[];
     equalKeys?: string[];
   };
+  /** Whether the table container is resizable */
+  /** 表格容器是否可调整大小 */
+  resizable?: boolean;
   /** Sort function for tree nodes */
   /** 树节点排序函数 */
   sort?: (a: any, b: any) => number;
