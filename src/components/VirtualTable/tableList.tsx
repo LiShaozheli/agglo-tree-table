@@ -175,6 +175,8 @@ const TableList = (props: TableListProps) => {
                 alignItems: 'center',
                 height: '100%',
                 whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
                 // 使用新的列边框配置
                 borderRight: getColumnBorderStyle(),
                 ...(column.style || {}),

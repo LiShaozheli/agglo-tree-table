@@ -242,6 +242,9 @@ const TableHeader: FC<TableHeaderProps> = props => {
                   column.children?.length > 0
                     ? headerRowHeight
                     : (headerLayer - layer + 1) * headerRowHeight,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
                 ...(column.headerStyle || {}),
               }}
             >
