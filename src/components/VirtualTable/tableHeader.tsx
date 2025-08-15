@@ -117,22 +117,46 @@ const TableHeader: FC<TableHeaderProps> = props => {
 
   // 计算页面上固定元素的高度
   const calculateFixedHeight = () => {
-    // 查找页面上所有固定元素并计算它们的总高度
-    const stickyElements = document.querySelectorAll('[style*="position: sticky"], [style*="position: fixed"]');
-    let offset = 0;
+    // 获取所有可能的固定元素
+    const allElements = document.querySelectorAll('body *');
+    let fixedElements: HTMLElement[] = [];
     
-    stickyElements.forEach(element => {
-      const elementStyle = window.getComputedStyle(element);
-      const isSticky = elementStyle.position === 'sticky' || elementStyle.position === 'fixed';
-      const isTopSticky = elementStyle.top === '0px' || elementStyle.top === '0';
+    // 遍历所有元素，找出固定在顶部的元素
+    allElements.forEach(element => {
+      if (!(element instanceof HTMLElement)) return;
       
-      if (isSticky && isTopSticky) {
-        const rect = element.getBoundingClientRect();
-        offset += rect.height;
+      const style = window.getComputedStyle(element);
+      const position = style.position;
+      const top = style.top;
+      const zIndex = parseInt(style.zIndex || '0');
+      
+      // 检查是否是固定或粘性定位
+      const isFixedOrSticky = position === 'fixed' || position === 'sticky';
+      
+      // 检查是否在顶部（top 为 0 或接近 0）
+      const isAtTop = top === '0px' || top === '0' || (parseFloat(top) <= 1 && parseFloat(top) >= 0);
+      
+      // 如果元素固定在顶部，添加到列表中
+      if (isFixedOrSticky && isAtTop) {
+        fixedElements.push(element);
       }
     });
     
-    return offset;
+    // 按照 z-index 排序，确保按正确的层级顺序计算高度
+    fixedElements.sort((a, b) => {
+      const aZIndex = parseInt(window.getComputedStyle(a).zIndex || '0');
+      const bZIndex = parseInt(window.getComputedStyle(b).zIndex || '0');
+      return aZIndex - bZIndex;
+    });
+    
+    // 计算总高度
+    let totalHeight = 0;
+    fixedElements.forEach(element => {
+      const rect = element.getBoundingClientRect();
+      totalHeight += rect.height;
+    });
+    
+    return totalHeight;
   };
 
   // 设置表头高度
