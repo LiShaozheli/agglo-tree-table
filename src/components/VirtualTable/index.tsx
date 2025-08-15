@@ -342,7 +342,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
 
   const getColumns = (cols: any[], displayCols?: string[]): any[] => {
     // 如果没有指定 displayColumns，则显示所有列
-    if (!displayCols || displayCols.length === 0) {
+    if (!displayCols) {
       return cols;
     }
     
