@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { SettingOutlined } from '@ant-design/icons';
 import type { TableTheme } from '../VirtualTable/themes';
 
 export interface ColumnManagerProps {
@@ -12,8 +13,6 @@ export interface ColumnManagerProps {
   theme?: TableTheme;
   /** Position of the column manager */
   position?: 'left' | 'right';
-  /** Whether the column manager should be fixed and not scroll with the table */
-  fixedPosition?: boolean;
 }
 
 // 获取所有列（包括嵌套子列）
@@ -38,7 +37,6 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   onColumnVisibilityChange,
   theme,
   position = 'right',
-  fixedPosition = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const columnManagerRef = useRef<HTMLDivElement>(null);
@@ -60,21 +58,9 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     };
   }, [isOpen]);
 
-  // 列管理图标组件 - 使用 aggrid 风格的图标
+  // 列管理图标组件 - 使用 antd 的 SettingOutlined 图标
   const ColumnManagerIcon = () => (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      style={{
-        verticalAlign: 'middle',
-      }}
-    >
-      <path
-        fill={theme?.primaryColor || '#007bff'}
-        d="M2 2h12v2H2V2zm0 4h12v2H2V6zm0 4h12v2H2v-2zm0 4h12v2H2v-2z"
-      />
-    </svg>
+    <SettingOutlined style={{ color: theme?.primaryColor || '#007bff', fontSize: '16px' }} />
   );
 
   // 切换列可见性
@@ -113,12 +99,9 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   return (
     <div 
       style={{ 
-        position: fixedPosition ? 'absolute' : 'relative',
+        position: 'relative',
         display: 'flex',
         height: '100%',
-        [position === 'left' ? 'left' : 'right']: fixedPosition ? 0 : 'auto',
-        top: 0,
-        zIndex: fixedPosition ? 1001 : 'auto',
       }} 
       ref={columnManagerRef}
     >

@@ -22,12 +22,6 @@ AggloTreeTable 是一个功能强大的 React 组件，它通过树形数据分�
 
 <code src="../../../examples/column-management-example.tsx" title="列管理示例" description="展示如何使用内置的列管理功能控制列的显示与隐藏"></code>
 
-### 使用固定定位的列管理功能
-
-通过 `columnManagerFixed` 属性启用列管理器的固定定位功能，使其不随表格水平滚动。
-
-<code src="../../../examples/fixed-column-management-position.tsx" title="固定定位列管理示例" description="展示如何使用固定定位的列管理功能，使其不随表格水平滚动"></code>
-
 ### 使用全部展开/收起功能
 
 通过 [showExpandAll](file:///d:/work/agglo-tree-table/src/components/VirtualTable/index.tsx#L36-L36) 属性启用全部展开/收起功能，并通过 ref 调用相关方法。
@@ -143,10 +137,9 @@ export default () => {
 | columns | 表格列配置 | `any[]` | - |
 | dataSource | 表格数据源 | `Array<Record<string, any>>` | - |
 | rowKey | 唯一行键 | `string` | - |
-| width | 表格容器的宽度 | `number \| string` | `100%` |
+| tableFixedHeight | 固定表格高度 | `number` | - |
 | displayColumns | 要显示的列（仅显示这些列） | `string[]` | `[]` |
 | showColumnManagement | 是否显示列管理组件 | `boolean` | `false` |
-| columnManagerPosition | 列管理组件的位置 | `'left' \| 'right'` | `'right'` |
 | loading | 加载状态 | `boolean` | `false` |
 | expandable | 可展开配置 | `ExpandableProps` | - |
 

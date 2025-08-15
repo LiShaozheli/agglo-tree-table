@@ -1,8 +1,11 @@
-import React, { FC, memo, ReactNode, useEffect, useRef, useState, useMemo, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, useMemo, forwardRef, memo } from 'react';
 import ResizeObserver from 'rc-resize-observer';
+import { CaretRightOutlined, PlusSquareOutlined, MinusSquareOutlined } from '@ant-design/icons';
+import type { TableTheme } from './themes';
+import type { ReactNode } from 'react';
 import TableList from './tableList';
 import TableHeader from './tableHeader';
-import { predefinedThemes, type TableTheme } from './themes';
+import { predefinedThemes } from './themes';
 import './index.css';
 
 /**
@@ -234,40 +237,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     collapseAll,
   }));
 
-  // 展开图标组件
-  const ExpandIcon = () => (
-    <svg 
-      width="16" 
-      height="16" 
-      viewBox="0 0 16 16" 
-      style={{ 
-        verticalAlign: 'middle',
-      }}
-    >
-      <path 
-        fill={tableTheme.primaryColor || '#1890ff'} 
-        d="M6 4l4 4-4 4V4z"
-      />
-    </svg>
-  );
-
-  // 收起图标组件
-  const CollapseIcon = () => (
-    <svg 
-      width="16" 
-      height="16" 
-      viewBox="0 0 16 16" 
-      style={{ 
-        verticalAlign: 'middle',
-      }}
-    >
-      <path 
-        fill={tableTheme.primaryColor || '#1890ff'} 
-        d="M12 6L8 10 4 6h8z"
-      />
-    </svg>
-  );
-
   const expandColum = {
     width: expandColumnWidth,
     title: expandColumnTitle,
@@ -275,7 +244,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     headerStyle: {
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       justifyContent: 'center',
     },
     render: (value: any, record: any, index: number, expanded: string[], Layer: number) => {
@@ -284,40 +253,25 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
         if (!data.children) return null;
         if (expandIcon) return expandIcon(isExpend, data[expandDataIndex], data);
         
-        // 使用更美观的SVG图标替换原有的简单字符，并添加更好的动画效果
-        const ExpandIcon = () => (
-          <svg 
-            width="16" 
-            height="16" 
-            viewBox="0 0 16 16" 
+        return (
+          <span 
             style={{ 
-              transform: isExpend ? 'rotate(90deg)' : 'rotate(0deg)',
-              transition: 'transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
-              verticalAlign: 'middle',
+              display: 'inline-flex', 
+              alignItems: 'center',
+              cursor: 'pointer',
               marginRight: '8px',
-              transformOrigin: 'center center'
             }}
           >
-            <path 
-              fill={tableTheme.primaryColor || '#1890ff'} 
-              d="M6 4l4 4-4 4V4z"
-            />
-          </svg>
-        );
-        
-        return (
-          <>
-            <span 
+            <CaretRightOutlined
               style={{ 
-                display: 'inline-flex', 
-                alignItems: 'center',
-                cursor: 'pointer'
+                transform: isExpend ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
+                verticalAlign: 'middle',
+                transformOrigin: 'center center',
               }}
-            >
-              <ExpandIcon />
-            </span>
+            />
             {`${data[expandDataIndex]}(${data.length || data.children.length})`}
-          </>
+          </span>
         );
       };
       return (
@@ -326,7 +280,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           style={{
             paddingLeft: Layer * indentSize,
             width: '100%',
-            color: tableTheme.primaryColor, // 使用主题中的主色调替换硬编码颜色
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -371,10 +324,15 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
         finalExpandColumn = {
           ...expandColum,
           title: (
-            <div>
-              {expandColumnTitle}
+            <div style={{ 
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <span>{expandColumnTitle}</span>
               <div style={{ 
-                marginTop: '5px',
                 display: 'flex',
                 gap: '4px'
               }}>
@@ -404,10 +362,15 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
                     }}
                     title="全部展开"
                   >
-                    <ExpandIcon />
+                    <PlusSquareOutlined
+                      style={{ 
+                        color: tableTheme.primaryColor || '#1890ff',
+                        fontSize: '16px'
+                      }}
+                    />
                   </button>
                 )}
-                {!isAllCollapsed && (
+                {expandedRowKeys.length > 0 && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -433,7 +396,12 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
                     }}
                     title="全部收起"
                   >
-                    <CollapseIcon />
+                    <MinusSquareOutlined
+                      style={{ 
+                        color: tableTheme.primaryColor || '#1890ff',
+                        fontSize: '16px'
+                      }}
+                    />
                   </button>
                 )}
               </div>
