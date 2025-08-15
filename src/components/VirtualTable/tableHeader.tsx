@@ -221,21 +221,41 @@ const TableHeader: FC<TableHeaderProps> = props => {
   const renderHeader = (oldColumns: Record<string, any>, layer = 0) => {
     if (layer > headerLayer) setHeaderLayer(layer);
     
-    // 列宽调整处理函数
+    // 列宽调整处理函数 - 只更新当前表格中的列
     const handleResizeStart = (dataIndex: string, e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       
       const startX = e.clientX;
       const startWidth = columnWidth[dataIndex] || 100;
+      let currentWidth = startWidth;
       
       const handleMouseMove = (moveEvent: MouseEvent) => {
+        // 精确计算新宽度，确保与鼠标位置同步
         const diff = moveEvent.clientX - startX;
         const newWidth = Math.max(50, startWidth + diff); // 最小宽度50px
-        onColumnWidthChange?.(dataIndex, newWidth);
+        
+        // 只有当宽度变化时才更新currentWidth变量
+        if (newWidth !== currentWidth) {
+          currentWidth = newWidth;
+          
+          // 在拖拽过程中只更新当前表格中的DOM样式，不触发回调更新状态
+          // 通过containerRef限制选择范围，确保只选择当前表格中的元素
+          if (containerRef?.current) {
+            const headerCells = containerRef.current.querySelectorAll(`[data-dataindex="${dataIndex}"]`);
+            headerCells.forEach(cell => {
+              if (cell instanceof HTMLElement) {
+                cell.style.width = `${newWidth}px`;
+              }
+            });
+          }
+        }
       };
 
       const handleMouseUp = () => {
+        // 鼠标释放时才触发回调更新状态
+        onColumnWidthChange?.(dataIndex, currentWidth);
+        
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
@@ -265,6 +285,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
               position: 'relative',
               width: columnWidth[column.dataIndex] || column.width,
             }}
+            data-dataindex={column.dataIndex}
           >
             <div
               style={{
