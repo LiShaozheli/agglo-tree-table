@@ -48,7 +48,6 @@ export default () => {
       columns={columns}
       dataSource={data}
       rowKey="key"
-      tableFixedHeight={400}
     />
   );
 };
@@ -138,7 +137,6 @@ export default () => {
         columns={columns}
         dataSource={data}
         rowKey="id"
-        tableFixedHeight={400}
         expandable={{
           expandRowByClick: true,
           expandDataIndex: 'department',
@@ -162,7 +160,6 @@ export default () => {
 | rowHeight | 每行的高度 | `number` | `40` |
 | headerRowHeight | 表头行的高度 | `number` | `40` |
 | onRow | 行事件处理器 | `(record: any, index: any) => Record<string, any>` | - |
-| tableFixedHeight | 固定表格高度 | `number` | `48` |
 | displayColumns | 要显示的列（仅显示这些列） | `string[]` | `[]` |
 | loading | 加载状态 | `boolean` | `false` |
 | expandable | 可展开配置 | `ExpandableProps` | - |
@@ -231,7 +228,6 @@ export default () => (
     columns={columns}
     dataSource={largeDataset}
     rowKey="id"
-    tableFixedHeight={500}
     rowHeight={35}
   />
 );
@@ -282,7 +278,6 @@ export default () => (
     columns={columns}
     dataSource={data}
     rowKey="id"
-    tableFixedHeight={400}
     expandable={{
       expandRowByClick: true,
       expandDataIndex: 'name',

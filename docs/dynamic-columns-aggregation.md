@@ -104,7 +104,6 @@ export default () => {
         groupKeys={['instrumentName']}
         rowKey="positionId"
         displayColumns={visibleColumns} // 动态控制显示的列
-        tableFixedHeight={400}
         expandable={{
           expandDataIndex: 'expand',
           expandColumnWidth: 200,
@@ -225,7 +224,6 @@ export default () => {
         dataSource={data}
         groupKeys={groupingKeys} // 动态控制分组键
         rowKey="positionId"
-        tableFixedHeight={400}
         expandable={{
           expandDataIndex: 'expand',
           expandColumnWidth: 200,
@@ -420,7 +418,6 @@ export default () => {
         dataSource={sampleData}
         groupKeys={groupKeys}
         rowKey="positionId"
-        tableFixedHeight={400}
         displayColumns={displayColumns}
         expandable={{
           expandDataIndex: 'expand',

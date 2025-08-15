@@ -99,7 +99,6 @@ const ColumnManagementTest = () => {
         dataSource={sampleData}
         groupKeys={[]}
         rowKey="id"
-        tableFixedHeight={300}
         showColumnManagement={showColumnManagement}
         displayColumns={displayColumns}
       />

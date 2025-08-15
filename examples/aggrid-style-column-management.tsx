@@ -106,7 +106,6 @@ const AgGridStyleColumnManagement = () => {
         dataSource={sampleData}
         groupKeys={[]}
         rowKey="id"
-        tableFixedHeight={300}
         showColumnManagement={showColumnManagement}
         theme={theme}
       />

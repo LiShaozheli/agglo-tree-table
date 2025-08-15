@@ -255,7 +255,6 @@ const ThemeExample = () => {
         groupKeys={['instrumentName', 'bookName']}
         displayColumns={['instrumentName', 'bookName', 'positionId', 'positionName', 'marketValue']}
         rowKey={'positionId'}
-        tableFixedHeight={400}
         theme={getTableTheme()}
       />
     </div>

@@ -110,7 +110,6 @@ const BasicExample = () => {
         dataSource={sampleData}
         groupKeys={['instrumentName']}
         rowKey={'positionId'}
-        tableFixedHeight={300}
         displayColumns={['instrumentName', 'contractCode', 'MTE:pv', 'MTE:delta', 'MTE:deltaCash', 'remainingLot', 'remainingNotional']}
         expandable={{
           expandDataIndex: 'expand',

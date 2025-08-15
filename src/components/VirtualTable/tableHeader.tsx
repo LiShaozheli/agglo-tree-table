@@ -14,9 +14,6 @@ export interface TableHeaderProps {
   /** Header row height */
   /** 表头行高度 */
   headerRowHeight?: number;
-  /** Fixed table height */
-  /** 固定表格高度 */
-  tableFixedHeight?: number;
   /** Table reference */
   /** 表格引用 */
   tableRef: React.RefObject<HTMLDivElement>;
@@ -47,8 +44,7 @@ export interface TableHeaderProps {
 const TableHeader: FC<TableHeaderProps> = props => {
   const { 
     columns, 
-    headerRowHeight = 40, 
-    tableFixedHeight = 48, 
+    headerRowHeight = 40,
     tableRef, 
     columnWidth, 
     containerRef,

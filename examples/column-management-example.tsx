@@ -141,7 +141,6 @@ const ColumnManagementExample = () => {
         dataSource={sampleData}
         groupKeys={['instrumentName']}
         rowKey={'positionId'}
-        tableFixedHeight={300}
         showColumnManagement={showColumnManagement}
         expandable={{
           expandDataIndex: 'expand',

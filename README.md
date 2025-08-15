@@ -184,7 +184,6 @@ export default DemoComponent;
 | columns | 表格列配置 | `any[]` | - |
 | dataSource | 表格数据源 | `Array<Record<string, any>>` | - |
 | rowKey | 唯一行键 | `string` | - |
-| tableFixedHeight | 固定表格高度 | `number` | - |
 | displayColumns | 要显示的列（仅显示这些列） | `string[]` | `[]` |
 | loading | 加载状态 | `boolean` | `false` |
 | expandable | 可展开配置 | `ExpandableProps` | - |
@@ -366,8 +365,6 @@ export default MyComponent;
 | rowHeight | number | 每行的高度（默认：40） |
 | headerRowHeight | number | Height of header row (default: 40) |
 | headerRowHeight | number | 表头行的高度（默认：40） |
-| tableFixedHeight | number | Fixed table height (default: 48) |
-| tableFixedHeight | number | 固定表格高度（默认：48） |
 | loading | boolean | Loading state |
 | loading | boolean | 加载状态 |
 | expandable | ExpandableProps | Expandable configuration |

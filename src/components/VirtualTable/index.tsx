@@ -71,9 +71,6 @@ export interface VirtualTableProps {
   /** Row event handler */
   /** 行事件处理器 */
   onRow?: (record: any, index: any) => Record<string, any>;
-  /** Fixed table height */
-  /** 固定表格高度 */
-  tableFixedHeight?: number;
   /** Columns to display (show only these) */
   /** 要显示的列（仅显示这些列） */
   displayColumns?: string[];
@@ -115,7 +112,6 @@ export interface VirtualTableHandles {
  *   columns={columns}
  *   dataSource={data}
  *   rowKey="id"
- *   tableFixedHeight={300}
  * />
  * ```
  */
@@ -127,7 +123,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     rowHeight = 40,
     headerRowHeight = 40,
     onRow,
-    tableFixedHeight = 48,
     displayColumns,
     loading = false,
     expandable: {
@@ -473,7 +468,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           <TableHeader
             columns={originalColumns}
             headerRowHeight={headerRowHeight}
-            tableFixedHeight={tableFixedHeight}
             tableRef={tableRef}
             columnWidth={newColumnsWidth}
             containerRef={tableRef} // 传递容器引用

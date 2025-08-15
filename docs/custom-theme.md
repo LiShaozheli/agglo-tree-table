@@ -73,7 +73,6 @@ export default () => (
     dataSource={data}
     groupKeys={['name']}
     rowKey="id"
-    tableFixedHeight={300}
     theme="default" // 使用默认主题
   />
 );
@@ -138,7 +137,6 @@ export default () => (
     dataSource={data}
     groupKeys={['name']}
     rowKey="id"
-    tableFixedHeight={300}
     theme="antd"
   />
 );
@@ -203,7 +201,6 @@ export default () => (
     dataSource={data}
     groupKeys={['name']}
     rowKey="id"
-    tableFixedHeight={300}
     theme="agGrid" // 使用 AG Grid 风格
   />
 );
@@ -317,7 +314,6 @@ export default () => (
     dataSource={data}
     groupKeys={['name']}
     rowKey="id"
-    tableFixedHeight={300}
     theme={{
       primaryColor: '#007bff',
       headerBgColor: '#f8f9fa',
@@ -398,7 +394,6 @@ export default () => (
     dataSource={data}
     groupKeys={['name']}
     rowKey="id"
-    tableFixedHeight={300}
     theme={{
       primaryColor: '#007bff',
       headerBgColor: '#212529',
@@ -522,7 +517,6 @@ export default () => (
     dataSource={data}
     groupKeys={['name']}
     rowKey="id"
-    tableFixedHeight={300}
   />
 );
 ```

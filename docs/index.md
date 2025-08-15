@@ -86,7 +86,6 @@ export default () => (
     dataSource={data}
     groupKeys={['name']}
     rowKey="id"
-    tableFixedHeight={300}
   />
 );
 ```

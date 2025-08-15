@@ -137,7 +137,6 @@ export default () => {
 | columns | 表格列配置 | `any[]` | - |
 | dataSource | 表格数据源 | `Array<Record<string, any>>` | - |
 | rowKey | 唯一行键 | `string` | - |
-| tableFixedHeight | 固定表格高度 | `number` | - |
 | displayColumns | 要显示的列（仅显示这些列） | `string[]` | `[]` |
 | showColumnManagement | 是否显示列管理组件 | `boolean` | `false` |
 | loading | 加载状态 | `boolean` | `false` |

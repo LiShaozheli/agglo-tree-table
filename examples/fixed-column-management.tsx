@@ -170,7 +170,6 @@ const FixedColumnManagement = () => {
           dataSource={sampleData}
           groupKeys={[]}
           rowKey="id"
-          tableFixedHeight={350}
           showColumnManagement={showColumnManagement}
           theme={theme}
         />
