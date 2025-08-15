@@ -1,5 +1,5 @@
-import React, { FC, memo, useEffect, useState } from 'react';
-import VirtualTable, { VirtualTableProps } from '../VirtualTable';
+import React, { FC, memo, useEffect, useState, useRef } from 'react';
+import VirtualTable, { VirtualTableProps, VirtualTableHandles } from '../VirtualTable';
 import { TreeClass, DataTreeType } from '../../utils/treeClass';
 
 /**
@@ -37,6 +37,16 @@ export interface AggloTreeTableProps extends VirtualTableProps {
   displayColumns?: string[];
 }
 
+// 添加AggloTreeTable的公开方法接口
+export interface AggloTreeTableHandles {
+  /** Expand all rows */
+  /** 展开所有行 */
+  expandAll: () => void;
+  /** Collapse all rows */
+  /** 收起所有行 */
+  collapseAll: () => void;
+}
+
 /**
  * A React tree table component with aggregation capabilities for financial data.
  * 一个支持金融数据聚合功能的 React 树形表格组件。
@@ -61,7 +71,7 @@ export interface AggloTreeTableProps extends VirtualTableProps {
  * />
  * ```
  */
-const AggloTreeTable: FC<AggloTreeTableProps> = props => {
+const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTableProps>((props, ref) => {
   const {
     groupKeys,
     columns,
@@ -80,6 +90,7 @@ const AggloTreeTable: FC<AggloTreeTableProps> = props => {
   const [newDataSource, setNewDataSource] = useState<any[]>([]);
 
   const [expandRowByClick, setExpandRowByClick] = useState(false);
+  const virtualTableRef = useRef<VirtualTableHandles>(null);
 
   useEffect(() => {
     if (groupKeys?.length < 1) {
@@ -99,8 +110,15 @@ const AggloTreeTable: FC<AggloTreeTableProps> = props => {
     }
   }, [dataSource, groupKeys, AggregateKeys, rowKey, expandDataIndex, sort]);
 
+  // 使用useImperativeHandle暴露方法给父组件调用
+  React.useImperativeHandle(ref, () => ({
+    expandAll: () => virtualTableRef.current?.expandAll(),
+    collapseAll: () => virtualTableRef.current?.collapseAll(),
+  }));
+
   return (
     <VirtualTable
+      ref={virtualTableRef}
       {...props}
       loading={loading}
       columns={columns}
@@ -113,6 +131,6 @@ const AggloTreeTable: FC<AggloTreeTableProps> = props => {
       }}
     />
   );
-};
+});
 
 export default memo(AggloTreeTable);

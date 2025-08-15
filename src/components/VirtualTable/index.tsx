@@ -1,4 +1,4 @@
-import React, { FC, memo, ReactNode, useEffect, useRef, useState, useMemo } from 'react';
+import React, { FC, memo, ReactNode, useEffect, useRef, useState, useMemo, useImperativeHandle, forwardRef } from 'react';
 import ResizeObserver from 'rc-resize-observer';
 import TableList from './tableList';
 import TableHeader from './tableHeader';
@@ -34,6 +34,15 @@ export interface ExpandableProps {
   /** Custom expand icon renderer */
   /** 自定义展开图标渲染器 */
   expandIcon?: (isExpend: boolean, value: ReactNode, record: Record<string, any>) => ReactNode;
+  /** Whether to show expand all/collapse all buttons */
+  /** 是否显示全部展开/收起按钮 */
+  showExpandAll?: boolean;
+  /** Callback when expand all is triggered */
+  /** 全部展开时的回调函数 */
+  onExpandAll?: () => void;
+  /** Callback when collapse all is triggered */
+  /** 全部收起时的回调函数 */
+  onCollapseAll?: () => void;
 }
 
 /**
@@ -76,6 +85,16 @@ export interface VirtualTableProps {
   theme?: 'default' | 'antd' | 'agGrid' | TableTheme;
 }
 
+// 添加VirtualTable的公开方法接口
+export interface VirtualTableHandles {
+  /** Expand all rows */
+  /** 展开所有行 */
+  expandAll: () => void;
+  /** Collapse all rows */
+  /** 收起所有行 */
+  collapseAll: () => void;
+}
+
 /**
  * A virtualized table component for efficiently rendering large datasets.
  * 一个用于高效渲染大型数据集的虚拟化表格组件。
@@ -94,7 +113,7 @@ export interface VirtualTableProps {
  * />
  * ```
  */
-const VirtualTable: FC<VirtualTableProps> = props => {
+const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, ref) => {
   const {
     rowKey,
     columns = [],
@@ -114,6 +133,9 @@ const VirtualTable: FC<VirtualTableProps> = props => {
       expandIcon,
       expandColumnWidth = 150,
       expandColumnTitle,
+      showExpandAll = false,
+      onExpandAll,
+      onCollapseAll,
     } = {},
     theme = 'default',
   } = props;
@@ -139,12 +161,122 @@ const VirtualTable: FC<VirtualTableProps> = props => {
     setExpandedRowKeys(newExpendArray);
   };
 
+  // 全部展开
+  const expandAll = () => {
+    const getAllRowKeys = (data: any[], keys: string[] = []): string[] => {
+      data.forEach(item => {
+        // 检查是否有子项，如果有则添加到展开列表中
+        const children = item[childrenColumnName as keyof typeof item];
+        if (children && Array.isArray(children) && children.length > 0) {
+          keys.push(item[rowKey]);
+          getAllRowKeys(children, keys);
+        }
+      });
+      return keys;
+    };
+    
+    const allRowKeys = getAllRowKeys(dataSource);
+    setExpandedRowKeys(allRowKeys);
+    // 调用外部传入的回调函数
+    onExpandAll?.();
+  };
+
+  // 全部收起
+  const collapseAll = () => {
+    setExpandedRowKeys([]);
+    // 调用外部传入的回调函数
+    onCollapseAll?.();
+  };
+
+  // 检查是否所有可展开的行都已展开
+  const isAllExpanded = useMemo(() => {
+    if (!dataSource || dataSource.length === 0) return false;
+    
+    const getAllExpandableRowKeys = (data: any[], keys: string[] = []): string[] => {
+      data.forEach(item => {
+        const children = item[childrenColumnName as keyof typeof item];
+        if (children && Array.isArray(children) && children.length > 0) {
+          keys.push(item[rowKey]);
+          getAllExpandableRowKeys(children, keys);
+        }
+      });
+      return keys;
+    };
+    
+    const allExpandableRowKeys = getAllExpandableRowKeys(dataSource);
+    return allExpandableRowKeys.length > 0 && 
+           allExpandableRowKeys.every(key => expandedRowKeys.includes(key));
+  }, [dataSource, expandedRowKeys, childrenColumnName, rowKey]);
+
+  // 检查是否所有可展开的行都已收起
+  const isAllCollapsed = useMemo(() => {
+    if (!dataSource || dataSource.length === 0) return true;
+    
+    const getAllExpandableRowKeys = (data: any[], keys: string[] = []): string[] => {
+      data.forEach(item => {
+        const children = item[childrenColumnName as keyof typeof item];
+        if (children && Array.isArray(children) && children.length > 0) {
+          keys.push(item[rowKey]);
+          getAllExpandableRowKeys(children, keys);
+        }
+      });
+      return keys;
+    };
+    
+    const allExpandableRowKeys = getAllExpandableRowKeys(dataSource);
+    return allExpandableRowKeys.length === 0 || 
+           !expandedRowKeys.some(key => allExpandableRowKeys.includes(key));
+  }, [dataSource, expandedRowKeys, childrenColumnName, rowKey]);
+
+  // 使用useImperativeHandle暴露方法给父组件调用
+  useImperativeHandle(ref, () => ({
+    expandAll,
+    collapseAll,
+  }));
+
+  // 展开图标组件
+  const ExpandIcon = () => (
+    <svg 
+      width="16" 
+      height="16" 
+      viewBox="0 0 16 16" 
+      style={{ 
+        verticalAlign: 'middle',
+      }}
+    >
+      <path 
+        fill={tableTheme.primaryColor || '#1890ff'} 
+        d="M6 4l4 4-4 4V4z"
+      />
+    </svg>
+  );
+
+  // 收起图标组件
+  const CollapseIcon = () => (
+    <svg 
+      width="16" 
+      height="16" 
+      viewBox="0 0 16 16" 
+      style={{ 
+        verticalAlign: 'middle',
+      }}
+    >
+      <path 
+        fill={tableTheme.primaryColor || '#1890ff'} 
+        d="M12 6L8 10 4 6h8z"
+      />
+    </svg>
+  );
+
   const expandColum = {
     width: expandColumnWidth,
     title: expandColumnTitle,
     dataIndex: expandDataIndex,
     headerStyle: {
-
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      justifyContent: 'center',
     },
     render: (value: any, record: any, index: number, expanded: string[], Layer: number) => {
       const isExpend = expanded.includes(record[rowKey]);
@@ -233,12 +365,89 @@ const VirtualTable: FC<VirtualTableProps> = props => {
 
   useEffect(() => {
     if (expandRowByClick) {
-      const Columns = [expandColum, ...getColumns(columns, displayColumns)];
+      // 如果需要显示全部展开/收起按钮，则添加控制按钮到展开列标题
+      let finalExpandColumn = expandColum;
+      if (showExpandAll) {
+        finalExpandColumn = {
+          ...expandColum,
+          title: (
+            <div>
+              {expandColumnTitle}
+              <div style={{ 
+                marginTop: '5px',
+                display: 'flex',
+                gap: '4px'
+              }}>
+                {!isAllExpanded && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      expandAll();
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '2px',
+                      color: tableTheme.primaryColor,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = tableTheme.rowHoverBgColor || '#f5f5f5';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                    title="全部展开"
+                  >
+                    <ExpandIcon />
+                  </button>
+                )}
+                {!isAllCollapsed && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      collapseAll();
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '2px',
+                      color: tableTheme.primaryColor,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = tableTheme.rowHoverBgColor || '#f5f5f5';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                    title="全部收起"
+                  >
+                    <CollapseIcon />
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        };
+      }
+      
+      const Columns = [finalExpandColumn, ...getColumns(columns, displayColumns)];
       setOriginalColumns(Columns);
     } else {
       setOriginalColumns(getColumns(columns, displayColumns));
     }
-  }, [columns, displayColumns, expandRowByClick]);
+  }, [columns, displayColumns, expandRowByClick, showExpandAll, expandColumnTitle, tableTheme, isAllExpanded, isAllCollapsed]);
 
   const getNewCloumns = (column: any[]) => {
     const colsWidth: Record<string, number> = {};
@@ -331,6 +540,6 @@ const VirtualTable: FC<VirtualTableProps> = props => {
       </div>
     </ResizeObserver>
   );
-};
+});
 
 export default memo(VirtualTable);

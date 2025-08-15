@@ -16,6 +16,109 @@ AggloTreeTable 是一个功能强大的 React 组件，它通过树形数据分�
 
 <code src="../../../examples/basic-example.tsx" title="基础示例" description="最基本的 AggloTreeTable 用法，展示数据分组和聚合功能"></code>
 
+### 使用全部展开/收起功能
+
+通过 [showExpandAll](file:///d:/work/agglo-tree-table/src/components/VirtualTable/index.tsx#L36-L36) 属性启用全部展开/收起功能，并通过 ref 调用相关方法。
+
+```tsx
+import React, { useRef } from 'react';
+import { AggloTreeTable, AggloTreeTableHandles } from 'agglo-tree-table';
+
+export default () => {
+  const columns = [
+    {
+      title: '资产类别',
+      dataIndex: 'assetClass',
+      width: 150,
+    },
+    {
+      title: '行业',
+      dataIndex: 'sector',
+      width: 150,
+    },
+    {
+      title: ' instrument',
+      dataIndex: 'instrument',
+      width: 150,
+    },
+    {
+      title: '名义金额',
+      dataIndex: 'notional',
+      width: 120,
+    },
+    {
+      title: '现值',
+      dataIndex: 'pv',
+      width: 100,
+    }
+  ];
+
+  const data = [
+    {
+      id: '1',
+      assetClass: '股票',
+      sector: '科技',
+      instrument: 'AAPL',
+      notional: 1000000,
+      pv: 10000,
+    },
+    {
+      id: '2',
+      assetClass: '股票',
+      sector: '科技',
+      instrument: 'GOOGL',
+      notional: 2000000,
+      pv: 25000,
+    },
+    {
+      id: '3',
+      assetClass: '股票',
+      sector: '金融',
+      instrument: 'JPM',
+      notional: 1500000,
+      pv: 15000,
+    },
+    {
+      id: '4',
+      assetClass: '债券',
+      sector: '政府',
+      instrument: 'T-Bond',
+      notional: 3000000,
+      pv: 5000,
+    },
+    {
+      id: '5',
+      assetClass: '债券',
+      sector: '企业',
+      instrument: 'Corp Bond',
+      notional: 2500000,
+      pv: 7500,
+    }
+  ];
+  
+  const tableRef = useRef<AggloTreeTableHandles>(null);
+
+  return (
+    <div>
+      <div style={{ marginBottom: '10px' }}>
+        <button onClick={() => tableRef.current?.expandAll()}>全部展开</button>
+        <button onClick={() => tableRef.current?.collapseAll()} style={{ marginLeft: '10px' }}>全部收起</button>
+      </div>
+      <AggloTreeTable
+        ref={tableRef}
+        columns={columns}
+        dataSource={data}
+        groupKeys={['assetClass', 'sector']}
+        rowKey="id"
+        expandable={{
+          showExpandAll: true,
+        }}
+      />
+    </div>
+  );
+};
+```
+
 ## API
 
 ### AggloTreeTableProps
@@ -53,6 +156,18 @@ AggloTreeTable 是一个功能强大的 React 组件，它通过树形数据分�
 | expandColumnWidth | 展开列的宽度 | `number` | `150` |
 | expandColumnTitle | 展开列的标题 | `ReactNode` | - |
 | expandIcon | 自定义展开图标渲染器 | `(isExpend: boolean, value: ReactNode, record: Record<string, any>) => ReactNode` | - |
+| showExpandAll | 是否显示全部展开/收起按钮 | `boolean` | `false` |
+| onExpandAll | 全部展开时的回调函数 | `() => void` | - |
+| onCollapseAll | 全部收起时的回调函数 | `() => void` | - |
+
+### AggloTreeTableHandles
+
+通过 ref 可以访问以下方法：
+
+| 方法名 | 说明 | 类型 |
+| --- | --- | --- |
+| expandAll | 展开所有行 | `() => void` |
+| collapseAll | 收起所有行 | `() => void` |
 
 ## 使用场景
 
@@ -112,6 +227,9 @@ export default () => (
     AggregateKeys={{
       equalKeys: ['currency'],
       addBNkeys: ['notional', 'pv', 'delta', 'gamma', 'vega', 'theta']
+    }}
+    expandable={{
+      showExpandAll: true
     }}
   />
 );

@@ -54,6 +54,102 @@ export default () => {
 };
 ```
 
+### 使用全部展开/收起功能
+
+通过 [showExpandAll](file:///d:/work/agglo-tree-table/src/components/VirtualTable/index.tsx#L36-L36) 属性启用全部展开/收起功能，并通过 ref 调用相关方法。
+
+```tsx
+import React, { useRef } from 'react';
+import { VirtualTable, VirtualTableHandles } from 'agglo-tree-table';
+
+export default () => {
+  const columns = [
+    {
+      title: '部门',
+      dataIndex: 'department',
+      width: 150,
+    },
+    {
+      title: '组别',
+      dataIndex: 'group',
+      width: 150,
+    },
+    {
+      title: '姓名',
+      dataIndex: 'name',
+      width: 150,
+    },
+    {
+      title: '年龄',
+      dataIndex: 'age',
+      width: 100,
+    }
+  ];
+
+  const data = [
+    {
+      id: '1',
+      department: '技术部',
+      children: [
+        {
+          id: '1-1',
+          group: '前端组',
+          children: [
+            { id: '1-1-1', name: '张三', age: 25 },
+            { id: '1-1-2', name: '李四', age: 28 }
+          ]
+        },
+        {
+          id: '1-2',
+          group: '后端组',
+          children: [
+            { id: '1-2-1', name: '王五', age: 30 },
+            { id: '1-2-2', name: '赵六', age: 32 }
+          ]
+        }
+      ]
+    },
+    {
+      id: '2',
+      department: '产品部',
+      children: [
+        {
+          id: '2-1',
+          group: '产品组',
+          children: [
+            { id: '2-1-1', name: '钱七', age: 27 },
+            { id: '2-1-2', name: '孙八', age: 29 }
+          ]
+        }
+      ]
+    }
+  ];
+  
+  const tableRef = useRef<VirtualTableHandles>(null);
+
+  return (
+    <div>
+      <div style={{ marginBottom: '10px' }}>
+        <button onClick={() => tableRef.current?.expandAll()}>全部展开</button>
+        <button onClick={() => tableRef.current?.collapseAll()} style={{ marginLeft: '10px' }}>全部收起</button>
+      </div>
+      <VirtualTable
+        ref={tableRef}
+        columns={columns}
+        dataSource={data}
+        rowKey="id"
+        tableFixedHeight={400}
+        expandable={{
+          expandRowByClick: true,
+          expandDataIndex: 'department',
+          showExpandAll: true,
+        }}
+      />
+    </div>
+  );
+};
+```
+
 ## API
 
 ### VirtualTableProps
@@ -83,6 +179,18 @@ export default () => {
 | expandColumnWidth | 展开列的宽度 | `number` | `150` |
 | expandColumnTitle | 展开列的标题 | `ReactNode` | - |
 | expandIcon | 自定义展开图标渲染器 | `(isExpend: boolean, value: ReactNode, record: Record<string, any>) => ReactNode` | - |
+| showExpandAll | 是否显示全部展开/收起按钮 | `boolean` | `false` |
+| onExpandAll | 全部展开时的回调函数 | `() => void` | - |
+| onCollapseAll | 全部收起时的回调函数 | `() => void` | - |
+
+### VirtualTableHandles
+
+通过 ref 可以访问以下方法：
+
+| 方法名 | 说明 | 类型 |
+| --- | --- | --- |
+| expandAll | 展开所有行 | `() => void` |
+| collapseAll | 收起所有行 | `() => void` |
 
 ## 使用场景
 
@@ -140,22 +248,30 @@ import { VirtualTable } from 'agglo-tree-table';
 const data = [
   {
     id: '1',
-    name: 'Group 1',
+    name: '技术部',
     children: [
-      { id: '1-1', name: 'Item 1-1', value: 100 },
-      { id: '1-2', name: 'Item 1-2', value: 200 }
+      { id: '1-1', name: '张三', value: 100 },
+      { id: '1-2', name: '李四', value: 200 }
+    ]
+  },
+  {
+    id: '2',
+    name: '产品部',
+    children: [
+      { id: '2-1', name: '王五', value: 150 },
+      { id: '2-2', name: '赵六', value: 250 }
     ]
   }
 ];
 
 const columns = [
   {
-    title: 'Name',
+    title: '部门',
     dataIndex: 'name',
     width: 200,
   },
   {
-    title: 'Value',
+    title: '员工',
     dataIndex: 'value',
     width: 100,
   }
@@ -170,6 +286,7 @@ export default () => (
     expandable={{
       expandRowByClick: true,
       expandDataIndex: 'name',
+      showExpandAll: true,
     }}
   />
 );

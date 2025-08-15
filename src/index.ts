@@ -12,5 +12,5 @@ export { TreeClass } from './utils/treeClass';
 
 // Export TypeScript types
 // 导出 TypeScript 类型
-export type { AggloTreeTableProps, AggregateKeysType } from './components/AggloTreeTable';
-export type { VirtualTableProps, ExpandableProps } from './components/VirtualTable';
+export type { AggloTreeTableProps, AggloTreeTableHandles, AggregateKeysType } from './components/AggloTreeTable';
+export type { VirtualTableProps, VirtualTableHandles, ExpandableProps } from './components/VirtualTable';

@@ -3,169 +3,245 @@
 [![NPM version](https://img.shields.io/npm/v/agglo-tree-table.svg?style=flat)](https://npmjs.org/package/agglo-tree-table)
 [![NPM downloads](http://img.shields.io/npm/dm/agglo-tree-table.svg?style=flat)](https://npmjs.org/package/agglo-tree-table)
 
-A React tree table component with aggregation capabilities for financial data | 一个支持金融数据聚合功能的 React 树形表格组件
+一个支持金融数据聚合功能的 React 树形表格组件，支持虚拟化渲染和大规模数据展示。
 
-## 🏗 安装
+## 特性
 
-```bash
-# 使用 npm
-npm install agglo-tree-table
+- 🚀 虚拟化渲染：支持万级数据渲染
+- 🌲 树形结构：支持多级数据分组
+- 💰 数据聚合：支持 BigNumber 精确计算
+- ➕ 可展开行：支持树节点展开/折叠
+- 📌 粘性表头：滚动时保持表头可见
+- 🎨 高度可定制：支持多种配置选项
 
-# 使用 yarn
-yarn add agglo-tree-table
+## 安装
 
-# 使用 pnpm
-pnpm install agglo-tree-table
+```
+npm install agglo-tree-table --save
 ```
 
-## 🔨 快速开始
+```bash
+yarn add agglo-tree-table
+```
+
+```bash
+pnpm add agglo-tree-table
+```
+
+## 功能示例
+
+以下示例展示了组件的主要功能特性，包括树形分组、数据聚合和可展开行：
 
 ```tsx
-import React from 'react';
-import { AggloTreeTable } from 'agglo-tree-table';
+import React, { useRef } from 'react';
+import { AggloTreeTable, AggloTreeTableHandles } from 'agglo-tree-table';
+import 'agglo-tree-table/dist/style.css';
 
-const data = [
-  {
-    id: '1',
-    name: 'Apple Inc.',
-    contract: 'AAPL',
-    pv: 10000,
-    delta: 500,
-  },
-  {
-    id: '2',
-    name: 'Apple Inc.',
-    contract: 'AAPL',
-    pv: 15000,
-    delta: 750,
-  },
-  {
-    id: '3',
-    name: 'Microsoft Corp.',
-    contract: 'MSFT',
-    pv: 20000,
-    delta: 1000,
-  },
-];
+const DemoComponent = () => {
+  const columns = [
+    {
+      title: '部门',
+      dataIndex: 'department',
+      width: 150,
+    },
+    {
+      title: '组别',
+      dataIndex: 'group',
+      width: 150,
+    },
+    {
+      title: '姓名',
+      dataIndex: 'name',
+      width: 150,
+    },
+    {
+      title: '年龄',
+      dataIndex: 'age',
+      width: 100,
+      // 自定义单元格样式
+      onCell: () => ({ style: { textAlign: 'center' } }),
+    },
+    {
+      title: '薪资',
+      dataIndex: 'salary',
+      width: 120,
+      // 使用 BigNumber 进行精确计算的聚合字段
+      onCell: () => ({ style: { textAlign: 'right' } }),
+    },
+    {
+      title: '绩效',
+      dataIndex: 'performance',
+      width: 100,
+      // 只有当所有子项值相等时才显示的字段
+      onCell: () => ({ style: { textAlign: 'center' } }),
+    }
+  ];
 
-const columns = [
-  {
-    title: 'Instrument',
-    dataIndex: 'name',
-    width: 150,
-  },
-  {
-    title: 'Contract',
-    dataIndex: 'contract',
-    width: 100,
-  },
-  {
-    title: 'PV',
-    dataIndex: 'pv',
-    width: 120,
-  },
-  {
-    title: 'Delta',
-    dataIndex: 'delta',
-    width: 120,
-  },
-];
+  const data = [
+    {
+      id: '1',
+      department: '技术部',
+      group: '前端组',
+      name: '张三',
+      age: 25,
+      salary: '15000.00',
+      performance: 'A',
+    },
+    {
+      id: '2',
+      department: '技术部',
+      group: '前端组',
+      name: '李四',
+      age: 28,
+      salary: '18000.00',
+      performance: 'A',
+    },
+    {
+      id: '3',
+      department: '技术部',
+      group: '后端组',
+      name: '王五',
+      age: 30,
+      salary: '19000.00',
+      performance: 'B',
+    },
+    {
+      id: '4',
+      department: '产品部',
+      group: '产品组',
+      name: '赵六',
+      age: 32,
+      salary: '20000.00',
+      performance: 'A',
+    },
+    {
+      id: '5',
+      department: '产品部',
+      group: '设计组',
+      name: '钱七',
+      age: 27,
+      salary: '17000.00',
+      performance: 'B',
+    }
+  ];
+  
+  const tableRef = useRef<AggloTreeTableHandles>(null);
 
-export default () => (
-  <AggloTreeTable
-    columns={columns}
-    dataSource={data}
-    groupKeys={['name']}
-    rowKey="id"
-    tableFixedHeight={300}
-  />
-);
+  return (
+    <div>
+      <div style={{ marginBottom: '10px' }}>
+        <button onClick={() => tableRef.current?.expandAll()}>全部展开</button>
+        <button onClick={() => tableRef.current?.collapseAll()} style={{ marginLeft: '10px' }}>全部收起</button>
+      </div>
+      <AggloTreeTable
+        ref={tableRef}
+        columns={columns}
+        dataSource={data}
+        // 按部门和组别进行多级分组
+        groupKeys={['department', 'group']}
+        // 配置数据聚合
+        AggregateKeys={{
+          // 使用简单加法求和的字段
+          addkeys: ['age'],
+          // 使用 BigNumber 精确计算的字段
+          addBNkeys: ['salary'],
+          // 仅当所有子项值相等时才显示的字段
+          equalKeys: ['performance']
+        }}
+        // 配置行键
+        rowKey="id"
+        // 配置可展开功能
+        expandable={{
+          // 显示全部展开/收起按钮
+          showExpandAll: true,
+          // 自定义展开图标
+          expandIcon: (isExpand, value, record) => 
+            isExpand ? '▼' : '▶',
+          // 自定义展开列宽度
+          expandColumnWidth: 200,
+          // 自定义展开列标题
+          expandColumnTitle: '成员详情'
+        }}
+        // 自定义排序函数
+        sort={(a, b) => a.age - b.age}
+      />
+    </div>
+  );
+};
+
+export default DemoComponent;
 ```
 
-## 📚 组件文档
+## API
 
-项目使用 dumi 生成组件文档，可以通过以下命令启动文档站点：
-
-```bash
-# 启动文档开发服务器
-yarn docs:dev
-
-# 构建文档站点
-yarn docs:build
-```
-
-## 📦 特性
-
-- **虚拟化渲染**: 基于 `rc-virtual-list` 实现，轻松渲染万级数据
-- **树形结构**: 支持多级数据分组和树形展示
-- **数据聚合**: 支持 BigNumber 精确计算的数据聚合功能
-- **可展开行**: 支持展开/折叠操作
-- **粘性表头**: 滚动时保持表头可见
-- **高度可定制化**: 支持丰富的配置选项
-
-## 🧩 依赖
-
-- React (v16.8+)
-- bignumber.js (v9.0.0)
-- rc-resize-observer (v1.0.0)
-- rc-virtual-list (v3.0.0)
-
-## 🧪 开发
-
-```bash
-# 安装依赖
-yarn install
-
-# 构建组件库
-yarn build
-
-# 启动开发模式
-yarn dev
-
-# 运行测试
-yarn test
-
-# 生成文档
-yarn docs
-```
-
-## 📖 API
-
-### AggloTreeTable
+### AggloTreeTableProps
 
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | groupKeys | 用于分组的键，按层级顺序排列 | `string[]` | - |
 | AggregateKeys | 数据聚合配置 | `AggregateKeysType` | - |
 | sort | 树节点排序函数 | `(a: any, b: any) => number` | `() => 1` |
+| columns | 表格列配置 | `any[]` | - |
+| dataSource | 表格数据源 | `Array<Record<string, any>>` | - |
+| rowKey | 唯一行键 | `string` | - |
+| tableFixedHeight | 固定表格高度 | `number` | - |
+| displayColumns | 要显示的列（仅显示这些列） | `string[]` | `[]` |
+| loading | 加载状态 | `boolean` | `false` |
+| expandable | 可展开配置 | `ExpandableProps` | - |
 
-### VirtualTable
+### AggregateKeysType
 
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| rowKey | 唯一行键 | `string` | - |
-| columns | 表格列配置 | `any[]` | `[]` |
-| dataSource | 表格数据源 | `Array<Record<string, any>>` | `[]` |
-| tableFixedHeight | 固定表格高度 | `number` | `48` |
+| addkeys | 应使用简单加法求和的键 | `string[]` | - |
+| addBNkeys | 应使用 BigNumber 精确计算求和的键 | `string[]` | - |
+| equalKeys | 仅当所有子项值相等时才显示的键 | `string[]` | - |
 
-## 🏗️ 构建工具
+### ExpandableProps
 
-本项目现在使用 Vite 作为构建工具，替代了原来的 Rollup。
+| 属性 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| defaultExpandedRowKeys | 默认展开的行键 | `string[]` | - |
+| childrenColumnName | 数据中子项列的名称 | `string` | `children` |
+| expandDataIndex | 展开列的数据索引 | `string` | `expand` |
+| expandRowByClick | 是否通过点击任意位置展开行 | `boolean` | `false` |
+| indentSize | 每级的缩进大小 | `number` | `15` |
+| expandColumnWidth | 展开列的宽度 | `number` | `150` |
+| expandColumnTitle | 展开列的标题 | `ReactNode` | - |
+| expandIcon | 自定义展开图标渲染器 | `(isExpend: boolean, value: ReactNode, record: Record<string, any>) => ReactNode` | - |
+| showExpandAll | 是否显示全部展开/收起按钮 | `boolean` | `false` |
+| onExpandAll | 全部展开时的回调函数 | `() => void` | - |
+| onCollapseAll | 全部收起时的回调函数 | `() => void` | - |
 
-### 开发
+### AggloTreeTableHandles
 
-```bash
+通过 ref 可以访问以下方法：
+
+| 方法名 | 说明 | 类型 |
+| --- | --- | --- |
+| expandAll | 展开所有行 | `() => void` |
+| collapseAll | 收起所有行 | `() => void` |
+
+## 开发
+
+```
+# 安装依赖
+pnpm install
+
 # 启动开发服务器
-yarn dev
+pnpm dev
 
-# 构建生产版本
-yarn build
+# 构建库
+pnpm build
 
-# 预览构建结果
-yarn preview
+# 构建文档
+pnpm docs:build
+
+# 启动文档开发服务器
+pnpm docs:dev
 ```
 
-## 📄 License
+## LICENSE
 
 MIT
 # TreeTable Component
@@ -200,14 +276,14 @@ TreeTable 是一个功能强大的 React 组件，它通过树形数据分组和
 ## Installation
 ## 安装
 
-```bash
+```
 npm install tree-table-component
 ```
 
 or
 或者
 
-```bash
+```
 yarn add tree-table-component
 ```
 
