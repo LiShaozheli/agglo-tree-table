@@ -29,7 +29,6 @@ AggloTreeTable 是一个功能强大的 React 组件，它通过树形数据分�
 | dataSource | 表格数据源 | `Array<Record<string, any>>` | - |
 | rowKey | 唯一行键 | `string` | - |
 | tableFixedHeight | 固定表格高度 | `number` | - |
-| filterColumns | 要过滤的列（仅显示这些列） | `string[]` | `[]` |
 | displayColumns | 要显示的列（仅显示这些列） | `string[]` | `[]` |
 | loading | 加载状态 | `boolean` | `false` |
 | expandable | 可展开配置 | `ExpandableProps` | - |

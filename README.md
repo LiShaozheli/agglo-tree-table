@@ -292,8 +292,6 @@ export default MyComponent;
 | headerRowHeight | number | 表头行的高度（默认：40） |
 | tableFixedHeight | number | Fixed table height (default: 48) |
 | tableFixedHeight | number | 固定表格高度（默认：48） |
-| filterColumns | string[] | Columns to filter (show only these) |
-| filterColumns | string[] | 要过滤的列（仅显示这些列） |
 | loading | boolean | Loading state |
 | loading | boolean | 加载状态 |
 | expandable | ExpandableProps | Expandable configuration |
