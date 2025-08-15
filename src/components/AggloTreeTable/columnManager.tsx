@@ -102,6 +102,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
         position: 'relative',
         display: 'flex',
         height: '100%',
+        boxSizing: 'border-box',
       }} 
       ref={columnManagerRef}
     >
@@ -115,6 +116,8 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
         style={{
           background: theme?.headerBgColor || '#ffffff',
           border: `1px solid ${theme?.borderColor || '#d9d9d9'}`,
+          borderTop: theme?.showRowBorders ? `1px solid ${theme?.rowBorderColor || theme?.borderColor || '#d9d9d9'}` : 'none',
+          borderBottom: theme?.showRowBorders ? `1px solid ${theme?.rowBorderColor || theme?.borderColor || '#d9d9d9'}` : 'none',
           borderLeft: position === 'left' ? undefined : 'none',
           borderRight: position === 'right' ? undefined : 'none',
           padding: '8px 4px',
@@ -130,22 +133,23 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
           textOrientation: 'mixed',
           transform: 'rotate(180deg)',
           userSelect: 'none',
+          backgroundColor: theme?.headerBgColor || '#f0f0f0', // 使用更明显的背景色
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = theme?.rowHoverBgColor || '#f5f5f5';
+          e.currentTarget.style.backgroundColor = theme?.rowHoverBgColor || '#e0e0e0'; // 使用更明显的悬停色
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = theme?.headerBgColor || '#ffffff';
+          e.currentTarget.style.backgroundColor = theme?.headerBgColor || '#f0f0f0'; // 恢复到背景色而不是白色
         }}
         title={isOpen ? "收起列管理" : "展开列管理"}
       >
         <div style={{ 
           display: 'flex', 
           alignItems: 'center',
-          transform: 'rotate(180deg)'
+          transform: 'rotate(180deg)',
         }}>
           <ColumnManagerIcon />
-          <span style={{ marginLeft: '4px' }}>列管理</span>
+          <span style={{ marginTop: '8px' }}>列管理</span>
         </div>
       </div>
       
@@ -155,8 +159,14 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
           style={{
             backgroundColor: theme?.bodyBgColor || '#ffffff',
             border: `1px solid ${theme?.borderColor || '#d9d9d9'}`,
-            borderLeft: position === 'left' ? undefined : 'none',
-            borderRight: position === 'right' ? undefined : 'none',
+            borderLeft: position === 'left' ? 
+              (theme?.showColumnBorders ? `1px solid ${theme?.columnBorderColor || theme?.borderColor || '#d9d9d9'}` : undefined) : 
+              undefined,
+            borderRight: position === 'right' ? 
+              (theme?.showColumnBorders ? `1px solid ${theme?.columnBorderColor || theme?.borderColor || '#d9d9d9'}` : undefined) : 
+              undefined,
+            borderTop: 'none',
+            borderBottom: 'none',
             zIndex: 1000,
             width: '200px',
             display: 'flex',
@@ -165,6 +175,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             position: 'absolute',
             top: 0,
             [position === 'left' ? 'left' : 'right']: '100%',
+            boxSizing: 'border-box',
           }}
         >
           {/* 全选/取消全选 */}
@@ -203,7 +214,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             overflowY: 'auto',
             padding: '4px 0'
           }}>
-            {allColumns.map((column) => (
+            {allColumns.map((column, index) => (
               <div
                 key={column.dataIndex}
                 style={{
@@ -213,6 +224,9 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
                   alignItems: 'center',
                   fontSize: '13px',
                   color: theme?.bodyTextColor || '#000000',
+                  borderBottom: theme?.showRowBorders && index < allColumns.length - 1 ? 
+                    `1px solid ${theme?.rowBorderColor || theme?.borderColor || '#d9d9d9'}` : 
+                    undefined,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = theme?.rowHoverBgColor || '#f5f5f5';
