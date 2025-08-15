@@ -151,13 +151,30 @@ const VirtualTable: FC<VirtualTableProps> = props => {
       const getChiild = (data: any) => {
         if (!data.children) return null;
         if (expandIcon) return expandIcon(isExpend, data[expandDataIndex], data);
+        
+        // 使用更美观的SVG图标替换原有的简单字符
+        const ExpandIcon = () => (
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 16 16" 
+            style={{ 
+              transform: isExpend ? 'rotate(90deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+              verticalAlign: 'middle',
+              marginRight: '8px'
+            }}
+          >
+            <path 
+              fill={tableTheme.primaryColor || '#1890ff'} 
+              d="M6 4l4 4-4 4V4z"
+            />
+          </svg>
+        );
+        
         return (
           <>
-            {isExpend ? (
-              <span style={{ transform: 'rotate(90deg)', display: 'inline-block' }}>▶</span>
-            ) : (
-              <span>▶</span>
-            )}
+            <ExpandIcon />
             {`${data[expandDataIndex]}(${data.length || data.children.length})`}
           </>
         );
@@ -170,6 +187,9 @@ const VirtualTable: FC<VirtualTableProps> = props => {
             width: '100%',
             color: tableTheme.primaryColor, // 使用主题中的主色调替换硬编码颜色
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            height: '100%'
           }}
         >
           {getChiild(record)}
