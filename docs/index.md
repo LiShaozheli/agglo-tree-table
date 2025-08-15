@@ -96,3 +96,4 @@ export default () => (
 - [基础示例](/examples/basic-example)
 - [自定义样式和主题](/custom-theme)
 - [主题示例](/examples/theme-example)
+- [动态列显示和聚合](/dynamic-columns-aggregation)
