@@ -1,6 +1,8 @@
-import React, { FC, memo, useEffect, useState, useRef } from 'react';
-import VirtualTable, { VirtualTableProps, VirtualTableHandles } from '../VirtualTable';
-import { TreeClass, DataTreeType } from '../../utils/treeClass';
+import React, { useState, useEffect, useRef } from 'react';
+import VirtualTable, { type VirtualTableProps, type VirtualTableHandles } from '../VirtualTable';
+import { TreeClass } from '../../utils/treeClass';
+import ColumnManager from './columnManager';
+import type { TableTheme } from '../VirtualTable/themes';
 
 /**
  * Configuration for data aggregation
@@ -28,13 +30,26 @@ export interface AggloTreeTableProps extends VirtualTableProps {
   groupKeys: string[];
   /** Configuration for data aggregation */
   /** 数据聚合配置 */
-  AggregateKeys?: AggregateKeysType;
+  AggregateKeys?: {
+    addkeys?: string[];
+    addBNkeys?: string[];
+    equalKeys?: string[];
+  };
   /** Sort function for tree nodes */
   /** 树节点排序函数 */
   sort?: (a: any, b: any) => number;
   /** Columns to display in the table */
   /** 表格中要显示的列 */
   displayColumns?: string[];
+  /** Whether to show column management component */
+  /** 是否显示列管理组件 */
+  showColumnManagement?: boolean;
+  /** Position of the column management component */
+  /** 列管理组件的位置 */
+  columnManagerPosition?: 'left' | 'right';
+  /** Width of the table container */
+  /** 表格容器的宽度 */
+  width?: number | string;
 }
 
 // 添加AggloTreeTable的公开方法接口
@@ -78,19 +93,45 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     dataSource,
     rowKey,
     AggregateKeys,
-    tableFixedHeight,
     displayColumns,
     loading,
     expandable,
     sort = () => 1,
+    showColumnManagement = false,
+    columnManagerPosition = 'right',
+    width = '100%',
+    theme,
   } = props;
 
   const expandDataIndex = expandable?.expandDataIndex ?? 'expand';
   
   const [newDataSource, setNewDataSource] = useState<any[]>([]);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    if (displayColumns) return displayColumns;
+    if (!columns) return [];
+    
+    // 如果没有提供 displayColumns 且 columns 存在，则默认显示所有列
+    return columns
+      .filter(col => !col.children)
+      .map(col => col.dataIndex)
+      .filter(Boolean) as string[];
+  });
 
   const [expandRowByClick, setExpandRowByClick] = useState(false);
   const virtualTableRef = useRef<VirtualTableHandles>(null);
+
+  useEffect(() => {
+    if (displayColumns) {
+      setVisibleColumns(displayColumns);
+    } else if (columns) {
+      // 如果没有提供 displayColumns，则默认显示所有列
+      const allColumnKeys = columns
+        .filter(col => !col.children)
+        .map(col => col.dataIndex)
+        .filter(Boolean) as string[];
+      setVisibleColumns(allColumnKeys);
+    }
+  }, [displayColumns, columns]);
 
   useEffect(() => {
     if (groupKeys?.length < 1) {
@@ -116,21 +157,73 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     collapseAll: () => virtualTableRef.current?.collapseAll(),
   }));
 
+  const handleColumnVisibilityChange = (newVisibleColumns: string[]) => {
+    setVisibleColumns(newVisibleColumns);
+  };
+
+  // 处理主题配置
+  const tableTheme: TableTheme | undefined = typeof theme === 'string' ? undefined : theme;
+
+  // ColumnManager 的宽度计算 (按钮宽度 24px + 左右边框各 1px)
+  const columnManagerWidth = 26;
+  
+  // 计算 VirtualTable 容器的样式
+  const virtualTableContainerStyle = showColumnManagement && columns 
+    ? { 
+        width: `calc(${typeof width === 'number' ? `${width}px` : width} - ${columnManagerWidth}px)`,
+        height: '100%',
+        marginLeft: columnManagerPosition === 'left' ? `${columnManagerWidth}px` : '0',
+        marginRight: columnManagerPosition === 'right' ? `${columnManagerWidth}px` : '0'
+      }
+    : { 
+        width: width,
+        height: '100%'
+      };
+
   return (
-    <VirtualTable
-      ref={virtualTableRef}
-      {...props}
-      loading={loading}
-      columns={columns}
-      dataSource={newDataSource}
-      rowKey={rowKey}
-      tableFixedHeight={tableFixedHeight}
-      expandable={{
-        expandRowByClick,
-        ...expandable,
-      }}
-    />
+    <div style={{ 
+      position: 'relative',
+      display: 'flex',
+      height: '100%',
+      width: width,
+      overflowX: 'hidden', // 防止在 AggloTreeTable 级别出现横向滚动条
+      overflowY: 'visible',
+    }}>
+      {showColumnManagement && columns && (
+        <div style={{ 
+          position: 'absolute',
+          left: columnManagerPosition === 'left' ? 0 : undefined,
+          right: columnManagerPosition === 'right' ? 0 : undefined,
+          top: 0,
+          bottom: 0,
+          zIndex: 1001
+        }}>
+          <ColumnManager
+            columns={columns}
+            visibleColumns={visibleColumns}
+            onColumnVisibilityChange={handleColumnVisibilityChange}
+            theme={tableTheme}
+            position={columnManagerPosition}
+          />
+        </div>
+      )}
+      <div style={virtualTableContainerStyle}>
+        <VirtualTable
+          ref={virtualTableRef}
+          {...props}
+          displayColumns={displayColumns || visibleColumns}
+          loading={loading}
+          columns={columns}
+          dataSource={newDataSource}
+          rowKey={rowKey}
+          expandable={{
+            expandRowByClick,
+            ...expandable,
+          }}
+        />
+      </div>
+    </div>
   );
 });
 
-export default memo(AggloTreeTable);
+export default AggloTreeTable;

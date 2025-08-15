@@ -74,7 +74,7 @@ export default () => (
     groupKeys={['name']}
     rowKey="id"
     tableFixedHeight={300}
-    theme="antd" // 使用 Ant Design 风格
+    theme="default" // 使用默认主题
   />
 );
 ```
