@@ -118,6 +118,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
   });
 
   const [expandRowByClick, setExpandRowByClick] = useState(false);
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
   const virtualTableRef = useRef<VirtualTableHandles>(null);
 
   useEffect(() => {
@@ -130,6 +131,15 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
         .map(col => col.dataIndex)
         .filter(Boolean) as string[];
       setVisibleColumns(allColumnKeys);
+    }
+    
+    // 初始化列顺序
+    if (columns) {
+      const allColumnKeys = columns
+        .filter(col => !col.children)
+        .map(col => col.dataIndex)
+        .filter(Boolean) as string[];
+      setColumnOrder(allColumnKeys);
     }
   }, [displayColumns, columns]);
 
@@ -161,8 +171,64 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     setVisibleColumns(newVisibleColumns);
   };
 
+  const handleColumnOrderChange = (newColumnOrder: string[]) => {
+    setColumnOrder(newColumnOrder);
+  };
+
   // 处理主题配置
   const tableTheme: TableTheme | undefined = typeof theme === 'string' ? undefined : theme;
+
+  // 根据列顺序重新排列列
+  const reorderColumns = (cols: any[], order: string[]): any[] => {
+    if (!order || order.length === 0) return cols;
+    
+    // 创建一个映射来快速查找列的索引
+    const orderMap = new Map(order.map((dataIndex, index) => [dataIndex, index]));
+    
+    // 递归处理列和子列
+    const reorder = (columns: any[]): any[] => {
+      // 先处理子列
+      const processedColumns = columns.map(col => {
+        if (col.children) {
+          return {
+            ...col,
+            children: reorder(col.children)
+          };
+        }
+        return col;
+      });
+      
+      // 然后根据order排序
+      return processedColumns.sort((a, b) => {
+        // 如果是父列（有子列），我们基于第一个叶子子列来排序
+        if (a.children) {
+          // 找到第一个叶子子列
+          let firstLeafA = a.children[0];
+          while (firstLeafA && firstLeafA.children) {
+            firstLeafA = firstLeafA.children[0];
+          }
+          
+          let firstLeafB = b.children[0];
+          while (firstLeafB && firstLeafB.children) {
+            firstLeafB = firstLeafB.children[0];
+          }
+          
+          const indexA = firstLeafA?.dataIndex ? orderMap.get(firstLeafA.dataIndex) : Infinity;
+          const indexB = firstLeafB?.dataIndex ? orderMap.get(firstLeafB.dataIndex) : Infinity;
+          
+          return (indexA ?? Infinity) - (indexB ?? Infinity);
+        }
+        
+        // 如果是叶子列（没有子列），根据order排序
+        const indexA = a.dataIndex ? orderMap.get(a.dataIndex) : Infinity;
+        const indexB = b.dataIndex ? orderMap.get(b.dataIndex) : Infinity;
+        
+        return (indexA ?? Infinity) - (indexB ?? Infinity);
+      });
+    };
+    
+    return reorder(cols);
+  };
 
   // ColumnManager 的宽度计算 (按钮宽度 24px + 左右边框各 1px)
   const columnManagerWidth = 26;
@@ -202,6 +268,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
             columns={columns}
             visibleColumns={visibleColumns}
             onColumnVisibilityChange={handleColumnVisibilityChange}
+            onColumnOrderChange={handleColumnOrderChange}
             theme={tableTheme}
             position={columnManagerPosition}
           />
@@ -213,7 +280,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
           {...props}
           displayColumns={displayColumns || visibleColumns}
           loading={loading}
-          columns={columns}
+          columns={columns ? reorderColumns(columns, columnOrder) : columns}
           dataSource={newDataSource}
           rowKey={rowKey}
           expandable={{

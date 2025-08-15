@@ -1,6 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SettingOutlined } from '@ant-design/icons';
+import { SettingOutlined, HolderOutlined } from '@ant-design/icons';
 import type { TableTheme } from '../VirtualTable/themes';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export interface ColumnManagerProps {
   /** Table columns */
@@ -9,6 +25,8 @@ export interface ColumnManagerProps {
   visibleColumns: string[];
   /** Callback when column visibility changes */
   onColumnVisibilityChange: (visibleColumns: string[]) => void;
+  /** Callback when column order changes */
+  onColumnOrderChange?: (columnOrder: string[]) => void;
   /** Table theme */
   theme?: TableTheme;
   /** Position of the column manager */
@@ -35,12 +53,28 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   columns,
   visibleColumns,
   onColumnVisibilityChange,
+  onColumnOrderChange,
   theme,
   position = 'right',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
   const columnManagerRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLDivElement>(null);
+
+  // 初始化列顺序
+  useEffect(() => {
+    const allCols = extractAllColumns(columns);
+    setColumnOrder(allCols.map(col => col.dataIndex));
+  }, [columns]);
+
+  // 获取排序后的列
+  const getOrderedColumns = () => {
+    const allCols = extractAllColumns(columns);
+    return columnOrder
+      .map(dataIndex => allCols.find(col => col.dataIndex === dataIndex))
+      .filter(Boolean) as any[];
+  };
 
   // 点击外部关闭列管理器
   useEffect(() => {
@@ -63,12 +97,37 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     <SettingOutlined style={{ color: theme?.primaryColor || '#007bff', fontSize: '16px' }} />
   );
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      setColumnOrder((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        // 通知父组件列顺序已更改
+        onColumnOrderChange?.(newItems);
+        return newItems;
+      });
+    }
+  };
+
   // 切换列可见性
   const toggleColumnVisibility = (dataIndex: string) => {
     const newVisibleColumns = visibleColumns.includes(dataIndex)
-      ? visibleColumns.filter(key => key !== dataIndex)
+      ? visibleColumns.filter((key) => key !== dataIndex)
       : [...visibleColumns, dataIndex];
-    
     onColumnVisibilityChange(newVisibleColumns);
   };
 
@@ -209,56 +268,131 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
           </div>
           
           {/* 列列表 */}
-          <div style={{ 
-            flex: 1, 
-            overflowY: 'auto',
-            padding: '4px 0'
-          }}>
-            {allColumns.map((column, index) => (
-              <div
-                key={column.dataIndex}
-                style={{
-                  padding: '6px 12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontSize: '13px',
-                  color: theme?.bodyTextColor || '#000000',
-                  borderBottom: theme?.showRowBorders && index < allColumns.length - 1 ? 
-                    `1px solid ${theme?.rowBorderColor || theme?.borderColor || '#d9d9d9'}` : 
-                    undefined,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = theme?.rowHoverBgColor || '#f5f5f5';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={visibleColumns.includes(column.dataIndex)}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    toggleColumnVisibility(column.dataIndex);
-                  }}
-                  style={{
-                    marginRight: '8px',
-                  }}
-                />
-                <span 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleColumnVisibility(column.dataIndex);
-                  }}
-                >
-                  {column.title}
-                </span>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={columnOrder}
+              strategy={verticalListSortingStrategy}
+            >
+              <div style={{ 
+                flex: 1, 
+                overflowY: 'auto',
+                padding: '4px 0'
+              }}>
+                {getOrderedColumns().map((column, index) => (
+                  <SortableColumnItem
+                    key={column.dataIndex}
+                    column={column}
+                    index={index}
+                    allColumns={getOrderedColumns()}
+                    theme={theme}
+                    visibleColumns={visibleColumns}
+                    toggleColumnVisibility={toggleColumnVisibility}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </div>
       )}
+    </div>
+  );
+};
+
+const SortableColumnItem = ({ 
+  column, 
+  index, 
+  allColumns, 
+  theme, 
+  visibleColumns, 
+  toggleColumnVisibility 
+}: {
+  column: any;
+  index: number;
+  allColumns: any[];
+  theme?: TableTheme;
+  visibleColumns: string[];
+  toggleColumnVisibility: (dataIndex: string) => void;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: column.dataIndex });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    padding: '6px 12px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    fontSize: '13px',
+    color: theme?.bodyTextColor || '#000000',
+    borderBottom: theme?.showRowBorders && index < allColumns.length - 1 ? 
+      `1px solid ${theme?.rowBorderColor || theme?.borderColor || '#d9d9d9'}` : 
+      undefined,
+    backgroundColor: isDragging ? (theme?.rowHoverBgColor || '#f5f5f5') : 'transparent',
+    zIndex: isDragging ? 1 : 'auto',
+    position: 'relative' as const,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      onMouseEnter={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.backgroundColor = theme?.rowHoverBgColor || '#f5f5f5';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }
+      }}
+    >
+      <div 
+        {...listeners}
+        style={{
+          marginRight: '8px',
+          cursor: 'grab',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '20px',
+          height: '16px',
+        }}
+      >
+        <HolderOutlined style={{ color: theme?.bodyTextColor || '#666' }} />
+      </div>
+      <input
+        type="checkbox"
+        checked={visibleColumns.includes(column.dataIndex)}
+        onChange={(e) => {
+          e.stopPropagation();
+          toggleColumnVisibility(column.dataIndex);
+        }}
+        style={{
+          marginRight: '8px',
+        }}
+      />
+      <span 
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleColumnVisibility(column.dataIndex);
+        }}
+      >
+        {column.title}
+      </span>
     </div>
   );
 };
