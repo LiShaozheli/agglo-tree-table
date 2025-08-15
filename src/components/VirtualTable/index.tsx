@@ -152,7 +152,7 @@ const VirtualTable: FC<VirtualTableProps> = props => {
         if (!data.children) return null;
         if (expandIcon) return expandIcon(isExpend, data[expandDataIndex], data);
         
-        // 使用更美观的SVG图标替换原有的简单字符
+        // 使用更美观的SVG图标替换原有的简单字符，并添加更好的动画效果
         const ExpandIcon = () => (
           <svg 
             width="16" 
@@ -160,9 +160,10 @@ const VirtualTable: FC<VirtualTableProps> = props => {
             viewBox="0 0 16 16" 
             style={{ 
               transform: isExpend ? 'rotate(90deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease',
+              transition: 'transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
               verticalAlign: 'middle',
-              marginRight: '8px'
+              marginRight: '8px',
+              transformOrigin: 'center center'
             }}
           >
             <path 
@@ -189,7 +190,8 @@ const VirtualTable: FC<VirtualTableProps> = props => {
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            height: '100%'
+            height: '100%',
+            userSelect: 'none', // 防止文本选择干扰点击
           }}
         >
           {getChiild(record)}

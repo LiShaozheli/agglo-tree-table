@@ -1,4 +1,4 @@
-import React, { memo, FC, ReactNode } from 'react';
+import React, { memo, FC, ReactNode, useMemo } from 'react';
 import List from 'rc-virtual-list';
 import type { TableTheme } from './themes';
 
@@ -103,20 +103,55 @@ const TableList: FC<TableListProps> = props => {
     return `1px solid ${color}`;
   };
 
+  // 优化的交替行背景色计算方法
+  const getBackgroundColor = useMemo(() => {
+    // 创建一个映射来缓存行键到背景色的映射
+    const backgroundColorMap: Record<string, string> = {};
+    let globalIndex = 0;
+    
+    // 遍历数据并为每个行键分配背景色
+    const traverse = (items: Array<Record<string, any>>, expanded: string[], depth: number = 0) => {
+      for (const item of items) {
+        const key = item[rowKey];
+        if (key !== undefined) {
+          // 根据全局索引确定背景色
+          backgroundColorMap[key] = globalIndex % 2 === 0 
+            ? mergedTheme.alternatingRowBgColor || '#f5f5f5'
+            : mergedTheme.bodyBgColor || '#ffffff';
+          globalIndex++;
+          
+          // 如果当前项已展开且有子项，则遍历子项
+          if (expanded.includes(key) && item[childrenColumnName]?.length > 0) {
+            traverse(item[childrenColumnName], expanded, depth + 1);
+          }
+        }
+      }
+    };
+    
+    traverse(dataSource, expandedRowKeys);
+    
+    // 返回一个函数，用于根据行键获取背景色
+    return (rowKey: string) => backgroundColorMap[rowKey] || mergedTheme.bodyBgColor || '#ffffff';
+  }, [dataSource, expandedRowKeys, rowKey, childrenColumnName, mergedTheme]);
+
   const renderRow = (
     dataItem: Record<string, any>,
     newColumns: Record<string, any>[],
     index: number,
     expanded: string[],
-    Layer: number = 0,
-    fatherIndex: number = 0
+    Layer: number = 0
   ): ReactNode => {
+    // 使用优化的方法获取背景色
+    const backgroundColor = getBackgroundColor(dataItem[rowKey]);
+    const isExpanded = expanded.includes(dataItem[rowKey]);
+    
     return (
       <React.Fragment key={dataItem[rowKey]}>
         <div
+          className="agglo-tree-table-row"
           style={{
             display: 'flex',
-            backgroundColor: (index + fatherIndex) % 2 === 0 ? mergedTheme.alternatingRowBgColor : mergedTheme.bodyBgColor,
+            backgroundColor: backgroundColor,
             height: rowHeight,
             color: mergedTheme.bodyTextColor,
             fontSize: mergedTheme.fontSize,
@@ -128,6 +163,7 @@ const TableList: FC<TableListProps> = props => {
           {newColumns.map((column: Record<string, any>) => (
             <div
               key={column.dataIndex}
+              className="agglo-tree-table-cell"
               style={{
                 width: columnWidth[column.dataIndex] || column.width,
                 display: 'inline-flex',
@@ -146,17 +182,40 @@ const TableList: FC<TableListProps> = props => {
             </div>
           ))}
         </div>
-        {expanded.includes(dataItem[rowKey]) &&
-          dataItem[childrenColumnName]?.length > 0 &&
-          dataItem[childrenColumnName].map((item: Record<string, any>, ind: number) =>
-            renderRow(item, newColumns, ind, expanded, Layer + 1, index + 1)
-          )}
+        {dataItem[childrenColumnName]?.length > 0 && (
+          <div
+            className="agglo-tree-table-expand-container"
+            style={{
+              overflow: 'hidden',
+              maxHeight: isExpanded ? '1000px' : '0',
+            }}
+          >
+            {isExpanded &&
+              dataItem[childrenColumnName].map((item: Record<string, any>, ind: number) =>
+                renderRow(item, newColumns, ind, expanded, Layer + 1)
+              )}
+          </div>
+        )}
       </React.Fragment>
     );
   };
 
   return (
     <>
+      <style>{`
+        .agglo-tree-table-row {
+          transition: background-color 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+        
+        .agglo-tree-table-row:hover {
+          background-color: ${mergedTheme.rowHoverBgColor} !important;
+        }
+        
+        .agglo-tree-table-expand-container {
+          overflow: hidden;
+          transition: max-height 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+      `}</style>
       {dataSource?.length > 0 ? (
         <List
           data={dataSource}
