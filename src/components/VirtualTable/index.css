@@ -1,0 +1,14 @@
+.virtual-table-loading {
+  text-align: center;
+  padding: 20px;
+}
+
+.virtual-table-container {
+  overflow-x: scroll;
+  overflow-y: visible;
+  z-index: 10;
+}
+
+.virtual-table-min-width {
+  min-width: max-content;
+}

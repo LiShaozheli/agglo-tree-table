@@ -1,0 +1,34 @@
+.agglo-tree-table-row {
+  transition: background-color 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  display: flex;
+}
+
+.agglo-tree-table-row:hover {
+  background-color: inherit !important;
+}
+
+.agglo-tree-table-cell {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+}
+
+.agglo-tree-table-expand-container {
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.agglo-tree-table-empty {
+  width: 100%;
+  color: inherit;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.virtual-list-container {
+  overflow-y: visible;
+  z-index: 0;
+}

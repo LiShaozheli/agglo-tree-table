@@ -3,7 +3,7 @@ import ResizeObserver from 'rc-resize-observer';
 import TableList from './tableList';
 import TableHeader from './tableHeader';
 import { predefinedThemes, type TableTheme } from './themes';
-
+import './index.css';
 
 /**
  * Configuration for expandable rows
@@ -300,8 +300,8 @@ const VirtualTable: FC<VirtualTableProps> = props => {
         setTableWidth(width);
       }}
     >
-      <div style={{ overflowX: 'scroll', overflowY: 'visible', zIndex: 10 }} ref={tableRef}>
-        <div style={{ minWidth: 'max-content' }}>
+      <div className="virtual-table-container" ref={tableRef}>
+        <div className="virtual-table-min-width">
           <TableHeader
             columns={originalColumns}
             headerRowHeight={headerRowHeight}
@@ -312,7 +312,7 @@ const VirtualTable: FC<VirtualTableProps> = props => {
             theme={tableTheme}
           />
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>Loading...</div>
+            <div className="virtual-table-loading">Loading...</div>
           ) : (
             <TableList
               rowKey={rowKey}

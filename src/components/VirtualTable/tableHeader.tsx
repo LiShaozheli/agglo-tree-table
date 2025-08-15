@@ -1,5 +1,7 @@
-import React, { FC, memo, useEffect, useRef, useState } from 'react';
+import React, { FC, memo, ReactNode, useEffect, useRef, useState } from 'react';
 import type { TableTheme } from './themes';
+import './tableHeader.css';
+import './index.css';
 
 /**
  * Props for the TableHeader component

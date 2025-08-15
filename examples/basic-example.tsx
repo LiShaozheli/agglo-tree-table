@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { AggloTreeTable } from 'agglo-tree-table';
+import { AggloTreeTable } from '../src';
+import type { TableTheme } from '../src/components/VirtualTable/themes';
+import '../src/components/VirtualTable/index.css';
 
 // Sample data
 // 示例数据
@@ -90,11 +92,11 @@ const BasicExample = () => {
   const [theme, setTheme] = useState<'default' | 'antd' | 'agGrid'>('default');
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div className="example-container">
       <h1>AggloTreeTable Basic Example</h1>
       <h1>AggloTreeTable 基础示例</h1>
       
-      <div style={{ marginBottom: '20px' }}>
+      <div className="example-theme-selector">
         <label htmlFor="theme-select">选择主题: </label>
         <select id="theme-select" value={theme} onChange={(e) => setTheme(e.target.value as 'default' | 'antd' | 'agGrid')}>
           <option value="default">默认主题</option>

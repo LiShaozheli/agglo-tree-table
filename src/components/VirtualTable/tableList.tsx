@@ -1,6 +1,8 @@
-import React, { memo, FC, ReactNode, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import List from 'rc-virtual-list';
 import type { TableTheme } from './themes';
+import './tableList.css';
+import './index.css';
 
 /**
  * Props for the TableList component
@@ -46,16 +48,17 @@ interface TableListProps {
  * This component is used internally by VirtualTable to render rows with virtualization.
  * 该组件由 VirtualTable 内部使用，用于虚拟化渲染行。
  */
-const TableList: FC<TableListProps> = props => {
+const TableList = (props: TableListProps) => {
   const {
     rowKey,
     dataSource,
     columns,
     expandedRowKeys,
-    childrenColumnName = 'children',
-    rowHeight = 40,
-    onRow,
+    expandRowByClick = false,
+    rowHeight,
     columnWidth,
+    childrenColumnName,
+    onRow,
     theme,
   } = props;
 
@@ -121,8 +124,9 @@ const TableList: FC<TableListProps> = props => {
           globalIndex++;
           
           // 如果当前项已展开且有子项，则遍历子项
-          if (expanded.includes(key) && item[childrenColumnName]?.length > 0) {
-            traverse(item[childrenColumnName], expanded, depth + 1);
+          const children = item[childrenColumnName as keyof typeof item];
+          if (expanded.includes(key) && children && Array.isArray(children) && children.length > 0) {
+            traverse(children, expanded, depth + 1);
           }
         }
       }
@@ -140,7 +144,7 @@ const TableList: FC<TableListProps> = props => {
     index: number,
     expanded: string[],
     Layer: number = 0
-  ): ReactNode => {
+  ): React.ReactNode => {
     // 使用优化的方法获取背景色
     const backgroundColor = getBackgroundColor(dataItem[rowKey]);
     const isExpanded = expanded.includes(dataItem[rowKey]);
@@ -182,20 +186,23 @@ const TableList: FC<TableListProps> = props => {
             </div>
           ))}
         </div>
-        {dataItem[childrenColumnName]?.length > 0 && (
-          <div
-            className="agglo-tree-table-expand-container"
-            style={{
-              overflow: 'hidden',
-              maxHeight: isExpanded ? '1000px' : '0',
-            }}
-          >
-            {isExpanded &&
-              dataItem[childrenColumnName].map((item: Record<string, any>, ind: number) =>
-                renderRow(item, newColumns, ind, expanded, Layer + 1)
-              )}
-          </div>
-        )}
+        {(() => {
+          const children = dataItem[childrenColumnName as keyof typeof dataItem];
+          return children && Array.isArray(children) && children.length > 0 && (
+            <div
+              className="agglo-tree-table-expand-container"
+              style={{
+                overflow: 'hidden',
+                maxHeight: isExpanded ? '1000px' : '0',
+              }}
+            >
+              {isExpanded &&
+                children.map((item: Record<string, any>, ind: number) =>
+                  renderRow(item, newColumns, ind, expanded, Layer + 1)
+                )}
+            </div>
+          );
+        })()}
       </React.Fragment>
     );
   };
@@ -221,19 +228,15 @@ const TableList: FC<TableListProps> = props => {
           data={dataSource}
           height={0}
           itemKey={rowKey}
-          style={{ overflowY: 'visible', zIndex: 0 }}
+          className="virtual-list-container"
         >
           {(item, index) => renderRow(item, columns, index, expandedRowKeys, 0)}
         </List>
       ) : (
         <div
+          className="agglo-tree-table-empty"
           style={{
-            width: '100%',
-            height: 250,
             color: mergedTheme.bodyTextColor,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
           }}
         >
           No data available

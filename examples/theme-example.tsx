@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { AggloTreeTable } from 'agglo-tree-table';
+import { AggloTreeTable } from '../src';
+import type { TableTheme as VirtualTableTheme } from '../src/components/VirtualTable/themes';
+import '../src/components/VirtualTable/index.css';
+import './example.css';
 
 // 通过接口定义复制TableTheme结构
 interface TableTheme {
@@ -33,36 +36,33 @@ interface TableTheme {
   /** Border radius */
   /** 边框圆角 */
   borderRadius?: number;
+  /** Whether to show row borders */
+  /** 是否显示行边框 */
+  showRowBorders?: boolean;
+  /** Whether to show column borders */
+  /** 是否显示列边框 */
+  showColumnBorders?: boolean;
+  /** Whether to show header row border */
+  /** 是否显示表头行边框 */
+  showHeaderRowBorder?: boolean;
+  /** Custom row border style */
+  /** 自定义行边框样式 */
+  rowBorderStyle?: string;
+  /** Custom column border style */
+  /** 自定义列边框样式 */
+  columnBorderStyle?: string;
+  /** Custom row border color */
+  /** 自定义行边框颜色 */
+  rowBorderColor?: string;
+  /** Custom header row border style */
+  /** 自定义表头行边框样式 */
+  headerRowBorderStyle?: string;
+  /** Custom header column border style */
+  /** 自定义表头列边框样式 */
+  headerColumnBorderStyle?: string;
   /** Header font weight */
   /** 表头字体粗细 */
-  headerFontWeight?: number | string;
-  /** Show column borders */
-  /** 是否显示列分割线 */
-  showColumnBorders?: boolean;
-  /** Show row borders */
-  /** 是否显示行分割线 */
-  showRowBorders?: boolean;
-  /** Show header row border */
-  /** 是否显示表头行分割线 */
-  showHeaderRowBorder?: boolean;
-  /** Column border color */
-  /** 列分割线颜色 */
-  columnBorderColor?: string;
-  /** Row border color */
-  /** 行分割线颜色 */
-  rowBorderColor?: string;
-  /** Column border style */
-  /** 列分割线样式 */
-  columnBorderStyle?: string;
-  /** Row border style */
-  /** 行分割线样式 */
-  rowBorderStyle?: string;
-  /** Header column border style */
-  /** 表头列分割线样式 */
-  headerColumnBorderStyle?: string;
-  /** Header row border style */
-  /** 表头行分割线样式 */
-  headerRowBorderStyle?: string;
+  headerFontWeight?: string;
 }
 
 // Sample data
@@ -233,11 +233,11 @@ const ThemeExample = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div className="example-container">
       <h1>AggloTreeTable Theme Example</h1>
       <h2>AggloTreeTable 主题示例</h2>
       
-      <div style={{ marginBottom: '20px' }}>
+      <div className="example-theme-selector">
         <label htmlFor="theme-selector">选择主题: </label>
         <select id="theme-selector" value={theme} onChange={handleThemeChange}>
           <option value="default">默认主题</option>
@@ -252,25 +252,10 @@ const ThemeExample = () => {
       <AggloTreeTable
         columns={tableColumns}
         dataSource={sampleData}
-        groupKeys={['instrumentName']}
+        groupKeys={['instrumentName', 'bookName']}
+        displayColumns={['instrumentName', 'bookName', 'positionId', 'positionName', 'marketValue']}
         rowKey={'positionId'}
         tableFixedHeight={400}
-        displayColumns={['instrumentName', 'contractCode', 'MTE:pv', 'MTE:delta', 'MTE:deltaCash', 'remainingLot', 'remainingNotional']}
-        expandable={{
-          expandDataIndex: 'expand',
-          expandColumnWidth: 200,
-          expandColumnTitle: 'Group',
-        }}
-        AggregateKeys={{
-          equalKeys: ['instrumentName'],
-          addBNkeys: [
-            'MTE:pv',
-            'MTE:delta',
-            'MTE:deltaCash',
-            'remainingLot',
-            'remainingNotional',
-          ],
-        }}
         theme={getTableTheme()}
       />
     </div>
