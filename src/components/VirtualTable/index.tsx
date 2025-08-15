@@ -175,7 +175,15 @@ const VirtualTable: FC<VirtualTableProps> = props => {
         
         return (
           <>
-            <ExpandIcon />
+            <span 
+              style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <ExpandIcon />
+            </span>
             {`${data[expandDataIndex]}(${data.length || data.children.length})`}
           </>
         );
