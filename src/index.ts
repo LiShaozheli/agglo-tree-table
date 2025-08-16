@@ -14,6 +14,10 @@ export { default as StickyContainer } from './components/StickyContainer';
 // 导出 TreeClass 工具类
 export { TreeClass } from './utils/treeClass';
 
+// Export DOM utilities
+// 导出 DOM 工具函数
+export { calculateFixedElementsHeight } from './utils/domUtils';
+
 // Export TypeScript types
 // 导出 TypeScript 类型
 export type { AggloTreeTableProps, AggloTreeTableHandles, AggregateKeysType } from './components/AggloTreeTable';

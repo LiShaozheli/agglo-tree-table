@@ -95,6 +95,8 @@ export default () => (
 - [AggloTreeTable](/components/agglo-tree-table) - 树形聚合表格组件
 - [VirtualTable](/components/virtual-table) - 虚拟化表格组件
 - [StickyContainer](/components/sticky-container) - 通用粘滞容器组件
+- [TreeClass](/components/tree-class) - 树形数据处理工具类
+- [DOM 工具函数](/components/dom-utils) - DOM 操作相关工具函数
 
 ## 更多示例
 
