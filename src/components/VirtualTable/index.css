@@ -4,7 +4,7 @@
 }
 
 .virtual-table-container {
-  overflow-x: scroll;
+  overflow-x: auto;
   overflow-y: visible;
   z-index: 10;
 }
