@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   title: 'AggloTreeTable Component',
-  // logo: './public/logo.png',
+  logo: '/logo.svg',
   outputPath: 'docs-dist',
   resolve: {
     docDirs: ['docs'],
@@ -25,4 +25,13 @@ export default defineConfig({
     name: 'AggloTreeTable',
     footer: 'AggloTreeTable Component - 一个支持金融数据聚合功能的 React 树形表格组件',
   },
+  // 添加样式配置来解决菜单项遮挡问题
+  styles: [
+    `
+    .dumi-default-header-left {
+      width: auto !important;
+      margin-right: 20px;
+    }
+    `
+  ],
 });
