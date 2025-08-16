@@ -268,7 +268,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
           right: columnManagerPosition === 'right' ? 0 : undefined,
           top: 0,
           bottom: 0,
-          zIndex: 1001
+          zIndex: 5
         }}>
           <ColumnManager
             columns={columns}

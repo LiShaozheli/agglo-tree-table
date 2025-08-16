@@ -226,7 +226,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
               undefined,
             borderTop: 'none',
             borderBottom: 'none',
-            zIndex: 1000,
+            zIndex: 5,  // 降低 z-index 值，避免遮挡 dumi 菜单栏
             width: '200px',
             display: 'flex',
             flexDirection: 'column',
