@@ -152,7 +152,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   const [tableWidth, setTableWidth] = useState(0);
   const [newColumnsWidth, setNewColumnsWidth] = useState<Record<string, number>>({});
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({}); // 添加列宽状态
-  
+
   const tableRef = useRef<HTMLDivElement>(null);
 
   // 处理列宽变化
@@ -177,21 +177,25 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     setExpandedRowKeys(newExpendArray);
   };
 
+  // 通用函数：递归获取所有可展开的行键值
+  const getAllRowKeys = (data: any[], keys: string[] = []): string[] => {
+    data.forEach(item => {
+      const children = item[childrenColumnName as keyof typeof item];
+      if (children && Array.isArray(children) && children.length > 0) {
+        keys.push(item[rowKey]);
+        getAllRowKeys(children, keys);
+      }
+    });
+    return keys;
+  };
+
+  // 使用 useMemo 缓存所有可展开行的键值，仅在 dataSource 变化时重新计算
+  const allRowKeys = useMemo(() => {
+    return getAllRowKeys(dataSource);
+  }, [dataSource, childrenColumnName, rowKey]);
+
   // 全部展开
   const expandAll = () => {
-    const getAllRowKeys = (data: any[], keys: string[] = []): string[] => {
-      data.forEach(item => {
-        // 检查是否有子项，如果有则添加到展开列表中
-        const children = item[childrenColumnName as keyof typeof item];
-        if (children && Array.isArray(children) && children.length > 0) {
-          keys.push(item[rowKey]);
-          getAllRowKeys(children, keys);
-        }
-      });
-      return keys;
-    };
-    
-    const allRowKeys = getAllRowKeys(dataSource);
     setExpandedRowKeys(allRowKeys);
     // 调用外部传入的回调函数
     onExpandAll?.();
@@ -207,42 +211,18 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   // 检查是否所有可展开的行都已展开
   const isAllExpanded = useMemo(() => {
     if (!dataSource || dataSource.length === 0) return false;
-    
-    const getAllExpandableRowKeys = (data: any[], keys: string[] = []): string[] => {
-      data.forEach(item => {
-        const children = item[childrenColumnName as keyof typeof item];
-        if (children && Array.isArray(children) && children.length > 0) {
-          keys.push(item[rowKey]);
-          getAllExpandableRowKeys(children, keys);
-        }
-      });
-      return keys;
-    };
-    
-    const allExpandableRowKeys = getAllExpandableRowKeys(dataSource);
-    return allExpandableRowKeys.length > 0 && 
-           allExpandableRowKeys.every(key => expandedRowKeys.includes(key));
-  }, [dataSource, expandedRowKeys, childrenColumnName, rowKey]);
+
+    return allRowKeys.length > 0 &&
+      allRowKeys.every(key => expandedRowKeys.includes(key));
+  }, [dataSource, expandedRowKeys, allRowKeys]);
 
   // 检查是否所有可展开的行都已收起
   const isAllCollapsed = useMemo(() => {
     if (!dataSource || dataSource.length === 0) return true;
-    
-    const getAllExpandableRowKeys = (data: any[], keys: string[] = []): string[] => {
-      data.forEach(item => {
-        const children = item[childrenColumnName as keyof typeof item];
-        if (children && Array.isArray(children) && children.length > 0) {
-          keys.push(item[rowKey]);
-          getAllExpandableRowKeys(children, keys);
-        }
-      });
-      return keys;
-    };
-    
-    const allExpandableRowKeys = getAllExpandableRowKeys(dataSource);
-    return allExpandableRowKeys.length === 0 || 
-           !expandedRowKeys.some(key => allExpandableRowKeys.includes(key));
-  }, [dataSource, expandedRowKeys, childrenColumnName, rowKey]);
+
+    return allRowKeys.length === 0 ||
+      !expandedRowKeys.some(key => allRowKeys.includes(key));
+  }, [dataSource, expandedRowKeys, allRowKeys]);
 
   // 使用useImperativeHandle暴露方法给父组件调用
   useImperativeHandle(ref, () => ({
@@ -265,18 +245,18 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
       const getChiild = (data: any) => {
         if (!data.children) return null;
         if (expandIcon) return expandIcon(isExpend, data[expandDataIndex], data);
-        
+
         return (
-          <span 
-            style={{ 
-              display: 'inline-flex', 
+          <span
+            style={{
+              display: 'inline-flex',
               alignItems: 'center',
               cursor: 'pointer',
               marginRight: '8px',
             }}
           >
             <CaretRightOutlined
-              style={{ 
+              style={{
                 transform: isExpend ? 'rotate(90deg)' : 'rotate(0deg)',
                 transition: 'transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
                 verticalAlign: 'middle',
@@ -311,7 +291,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     if (!displayCols) {
       return cols;
     }
-    
+
     const newColumns: any[] = [];
     cols.forEach(column => {
       if (column.children?.length > 0) {
@@ -337,7 +317,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
         finalExpandColumn = {
           ...expandColum,
           title: (
-            <div style={{ 
+            <div style={{
               width: '100%',
               display: 'flex',
               flexDirection: 'row',
@@ -345,7 +325,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
               justifyContent: 'space-between'
             }}>
               <span>{expandColumnTitle}</span>
-              <div style={{ 
+              <div style={{
                 display: 'flex',
                 gap: '4px'
               }}>
@@ -376,7 +356,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
                     title="全部展开"
                   >
                     <PlusSquareOutlined
-                      style={{ 
+                      style={{
                         color: tableTheme.primaryColor || '#1890ff',
                         fontSize: '16px'
                       }}
@@ -410,7 +390,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
                     title="全部收起"
                   >
                     <MinusSquareOutlined
-                      style={{ 
+                      style={{
                         color: tableTheme.primaryColor || '#1890ff',
                         fontSize: '16px'
                       }}
@@ -422,7 +402,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           )
         };
       }
-      
+
       const Columns = [finalExpandColumn, ...getColumns(columns, displayColumns)];
       setOriginalColumns(Columns);
     } else {

@@ -229,9 +229,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
 
   return (
     <StickyContainer containerRef={containerRef} sticky={sticky}>  {/* 使用新的 StickyContainer 组件 */}
-      <div>
-        {renderHeader(columns)}
-      </div>
+      {renderHeader(columns)}
     </StickyContainer>
   );
 };
