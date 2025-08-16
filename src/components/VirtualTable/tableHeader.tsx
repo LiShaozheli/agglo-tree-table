@@ -1,6 +1,6 @@
 import React, { FC, memo, ReactNode, useEffect, useRef, useState } from 'react';
 import type { TableTheme } from './themes';
-import StickyHeader from './StickyHeader';
+import StickyContainer from '../StickyContainer';
 import './tableHeader.css';
 import './index.css';
 
@@ -15,15 +15,12 @@ export interface TableHeaderProps {
   /** Header row height */
   /** 表头行高度 */
   headerRowHeight?: number;
-  /** Table reference */
-  /** 表格引用 */
-  tableRef: React.RefObject<HTMLDivElement>;
   /** Column widths */
   /** 列宽度 */
   columnWidth: Record<string, number>;
   /** Table container reference */
   /** 表格容器引用 */
-  containerRef?: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement>;
   /** Table theme */
   /** 表格主题 */
   theme?: TableTheme;
@@ -46,7 +43,6 @@ const TableHeader: FC<TableHeaderProps> = props => {
   const {
     columns,
     headerRowHeight = 40,
-    tableRef,
     columnWidth,
     containerRef,
     theme,
@@ -228,15 +224,11 @@ const TableHeader: FC<TableHeaderProps> = props => {
   };
 
   return (
-    <StickyHeader
-      tableRef={tableRef}
-      boxShadow="0 2px 8px rgba(0,0,0,0.15)"
-      zIndex={1000}
-    >
+    <StickyContainer containerRef={containerRef}>  {/* 使用新的 StickyContainer 组件 */}
       <div>
         {renderHeader(columns)}
       </div>
-    </StickyHeader>
+    </StickyContainer>
   );
 };
 

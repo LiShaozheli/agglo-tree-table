@@ -24,9 +24,6 @@ interface TableListProps {
   /** Children column name */
   /** 子项列名称 */
   childrenColumnName?: string;
-  /** Whether to expand row by clicking */
-  /** 是否通过点击展开行 */
-  expandRowByClick?: boolean;
   /** Height of each row */
   /** 每行的高度 */
   rowHeight?: number;
@@ -54,7 +51,6 @@ const TableList = (props: TableListProps) => {
     dataSource,
     columns,
     expandedRowKeys,
-    expandRowByClick = false,
     rowHeight,
     columnWidth,
     childrenColumnName,

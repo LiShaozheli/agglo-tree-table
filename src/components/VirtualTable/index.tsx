@@ -468,7 +468,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           <TableHeader
             columns={originalColumns}
             headerRowHeight={headerRowHeight}
-            tableRef={tableRef}
             columnWidth={newColumnsWidth}
             containerRef={tableRef} // 传递容器引用
             theme={tableTheme}
@@ -483,7 +482,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
               dataSource={dataSource}
               columns={newColumn}
               expandedRowKeys={expandedRowKeys}
-              expandRowByClick={expandRowByClick}
               rowHeight={rowHeight}
               childrenColumnName={childrenColumnName}
               onRow={onRow}

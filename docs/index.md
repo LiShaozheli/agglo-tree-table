@@ -90,6 +90,12 @@ export default () => (
 );
 ```
 
+## 组件列表
+
+- [AggloTreeTable](/components/agglo-tree-table) - 树形聚合表格组件
+- [VirtualTable](/components/virtual-table) - 虚拟化表格组件
+- [StickyContainer](/components/sticky-container) - 通用粘滞容器组件
+
 ## 更多示例
 
 - [基础示例](/examples/basic-example)
