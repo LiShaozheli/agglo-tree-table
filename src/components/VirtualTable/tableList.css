@@ -9,8 +9,6 @@
 
 .agglo-tree-table-cell {
   display: inline-flex;
-  justify-content: center;
-  align-items: center;
   height: 100%;
   white-space: nowrap;
 }

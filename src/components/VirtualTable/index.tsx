@@ -237,9 +237,8 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     headerStyle: {
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
     },
+    align: 'left',
     render: (value: any, record: any, index: number, expanded: string[], Layer: number) => {
       const isExpend = expanded.includes(record[rowKey]);
       const getChiild = (data: any) => {
@@ -250,10 +249,11 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           <span
             style={{
               display: 'inline-flex',
-              alignItems: 'center',
               cursor: 'pointer',
               marginRight: '8px',
+              marginLeft: `${Layer * indentSize}px`,
             }}
+            onClick={() => isOrNotExpend(record[rowKey], expanded)}
           >
             <CaretRightOutlined
               style={{
@@ -267,22 +267,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           </span>
         );
       };
-      return (
-        <div
-          onClick={() => isOrNotExpend(record[rowKey], expanded)}
-          style={{
-            paddingLeft: Layer * indentSize,
-            width: '100%',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            height: '100%',
-            userSelect: 'none', // 防止文本选择干扰点击
-          }}
-        >
-          {getChiild(record)}
-        </div>
-      );
+      return getChiild(record);
     },
   };
 

@@ -81,11 +81,11 @@ const TableList = (props: TableListProps) => {
   // 获取行边框样式
   const getRowBorderStyle = () => {
     if (!mergedTheme.showRowBorders) return 'none';
-    
+
     if (mergedTheme.rowBorderStyle) {
       return mergedTheme.rowBorderStyle;
     }
-    
+
     const color = mergedTheme.rowBorderColor || mergedTheme.borderColor || '#ccc';
     return `1px solid ${color}`;
   };
@@ -93,11 +93,11 @@ const TableList = (props: TableListProps) => {
   // 获取列边框样式
   const getColumnBorderStyle = () => {
     if (!mergedTheme.showColumnBorders) return 'none';
-    
+
     if (mergedTheme.columnBorderStyle) {
       return mergedTheme.columnBorderStyle;
     }
-    
+
     const color = mergedTheme.borderColor || '#ccc';
     return `1px solid ${color}`;
   };
@@ -107,18 +107,18 @@ const TableList = (props: TableListProps) => {
     // 创建一个映射来缓存行键到背景色的映射
     const backgroundColorMap: Record<string, string> = {};
     let globalIndex = 0;
-    
+
     // 遍历数据并为每个行键分配背景色
     const traverse = (items: Array<Record<string, any>>, expanded: string[], depth: number = 0) => {
       for (const item of items) {
         const key = item[rowKey];
         if (key !== undefined) {
           // 根据全局索引确定背景色
-          backgroundColorMap[key] = globalIndex % 2 === 0 
+          backgroundColorMap[key] = globalIndex % 2 === 0
             ? mergedTheme.alternatingRowBgColor || '#f5f5f5'
             : mergedTheme.bodyBgColor || '#ffffff';
           globalIndex++;
-          
+
           // 如果当前项已展开且有子项，则遍历子项
           const children = item[childrenColumnName as keyof typeof item];
           if (expanded.includes(key) && children && Array.isArray(children) && children.length > 0) {
@@ -127,9 +127,9 @@ const TableList = (props: TableListProps) => {
         }
       }
     };
-    
+
     traverse(dataSource, expandedRowKeys);
-    
+
     // 返回一个函数，用于根据行键获取背景色
     return (rowKey: string) => backgroundColorMap[rowKey] || mergedTheme.bodyBgColor || '#ffffff';
   }, [dataSource, expandedRowKeys, rowKey, childrenColumnName, mergedTheme]);
@@ -144,7 +144,7 @@ const TableList = (props: TableListProps) => {
     // 使用优化的方法获取背景色
     const backgroundColor = getBackgroundColor(dataItem[rowKey]);
     const isExpanded = expanded.includes(dataItem[rowKey]);
-    
+
     return (
       <React.Fragment key={dataItem[rowKey]}>
         <div
@@ -166,21 +166,24 @@ const TableList = (props: TableListProps) => {
               className="agglo-tree-table-cell"
               style={{
                 width: columnWidth[column.dataIndex] || column.width,
-                display: 'inline-flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100%',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                justifyContent: column.align === 'right' ? 'flex-end' : column.align === 'left' ? 'flex-start' : 'center',
                 // 使用新的列边框配置
                 borderRight: getColumnBorderStyle(),
-                ...(column.style || {}),
               }}
+              onClick={column.onCellClick ? () => column.onCellClick(dataItem, index) : undefined}
             >
-              {column.render
-                ? column.render(dataItem[column.dataIndex], dataItem, index, expanded, Layer)
-                : dataItem[column.dataIndex]}
+              <div style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                minWidth: 0, // 关键：允许 flex item 收缩以触发文本省略
+                padding: '8px 12px', // 添加默认padding
+                ...(column.style || {}), // 将用户自定义样式移到内层
+              }}>
+                {column.render
+                  ? column.render(dataItem[column.dataIndex], dataItem, index, expanded, Layer)
+                  : dataItem[column.dataIndex]}
+              </div>
             </div>
           ))}
         </div>
