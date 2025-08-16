@@ -27,7 +27,7 @@ export interface AggregateKeysType {
 export interface AggloTreeTableProps extends VirtualTableProps {
   /** Keys to group by, in hierarchical order */
   /** 用于分组的键，按层级顺序排列 */
-  groupKeys: string[];
+  groupKeys?: string[];
   /** Configuration for data aggregation */
   /** 数据聚合配置 */
   AggregateKeys?: {
@@ -94,7 +94,7 @@ export interface AggloTreeTableHandles {
  */
 const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTableProps>((props, ref) => {
   const {
-    groupKeys,
+    groupKeys = [],
     columns,
     dataSource,
     rowKey,
