@@ -27,6 +27,11 @@ export interface StickyContainerProps {
    * 子元素 - 需要应用粘滞效果的内容
    */
   children: ReactNode;
+  /**
+   * 是否启用粘滞功能
+   * @default true
+   */
+  sticky?: boolean;
 }
 
 /**
@@ -41,7 +46,8 @@ const StickyContainer: FC<StickyContainerProps> = (props) => {
     containerRef,
     boxShadow = '0 2px 8px rgba(0,0,0,0.15)',
     zIndex = 1000,
-    children
+    children,
+    sticky = true
   } = props;
 
   const [isSticky, setIsSticky] = useState(false);
@@ -60,6 +66,14 @@ const StickyContainer: FC<StickyContainerProps> = (props) => {
 
   // 设置是否为粘滞状态
   const handleScroll = () => {
+    // 如果未启用粘滞功能，则直接返回
+    if (!sticky) {
+      if (isSticky) {
+        setIsSticky(false);
+      }
+      return;
+    }
+    
     const positionElement = positionRef?.current?.getBoundingClientRect();
     const containerElement = containerRef?.current?.getBoundingClientRect();
 
@@ -78,8 +92,10 @@ const StickyContainer: FC<StickyContainerProps> = (props) => {
   };
 
   useEffect(() => {
-    // 组件挂载时计算固定元素高度
-    setFixedElementsHeight(calculateFixedElementsHeight());
+    // 当sticky属性变化且为true时，重新计算固定元素高度
+    if (sticky) {
+      setFixedElementsHeight(calculateFixedElementsHeight());
+    }
 
     if (isSticky) {
       containerRef?.current?.addEventListener('scroll', handleContainerScroll);
@@ -92,7 +108,7 @@ const StickyContainer: FC<StickyContainerProps> = (props) => {
       containerRef?.current?.removeEventListener('scroll', handleContainerScroll);
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [positionRef, isSticky, containerRef]);
+  }, [positionRef, isSticky, containerRef, sticky]);
 
   // 设置内容粘滞状态的左右滚动
   const handleContainerScroll = () => {

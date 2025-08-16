@@ -53,6 +53,9 @@ export interface AggloTreeTableProps extends VirtualTableProps {
   /** Width of the table container */
   /** 表格容器的宽度 */
   width?: number | string;
+  /** Whether to enable sticky header */
+  /** 是否启用粘性表头 */
+  sticky?: boolean;
 }
 
 // 添加AggloTreeTable的公开方法接口

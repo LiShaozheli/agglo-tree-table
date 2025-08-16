@@ -197,6 +197,54 @@ export default () => {
 };
 ```
 
+### 控制粘滞功能的启用/禁用
+
+可以通过 [sticky](file:///d:/work/agglo-tree-table/src/components/StickyContainer/index.tsx#L27-L32) 属性控制是否启用粘滞功能：
+
+```tsx
+import React, { useRef, useState } from 'react';
+import { StickyContainer } from 'agglo-tree-table';
+import { Button } from 'antd';
+
+export default () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [stickyEnabled, setStickyEnabled] = useState(true);
+  
+  return (
+    <>
+      <div style={{ marginBottom: '10px' }}>
+        <Button 
+          onClick={() => setStickyEnabled(!stickyEnabled)}
+        >
+          {stickyEnabled ? '禁用粘滞' : '启用粘滞'}
+        </Button>
+      </div>
+      <StickyContainer 
+        containerRef={containerRef}
+        sticky={stickyEnabled}
+      >
+        <div style={{ 
+          background: '#f0f0f0', 
+          padding: '10px', 
+          borderBottom: '1px solid #ccc' 
+        }}>
+          {stickyEnabled ? '已启用粘滞功能' : '已禁用粘滞功能'}
+        </div>
+      </StickyContainer>
+      <div ref={containerRef} style={{ height: 400, overflow: 'auto' }}>
+        <div style={{ padding: '20px' }}>
+          {Array.from({ length: 100 }).map((_, index) => (
+            <div key={index} style={{ padding: '10px', borderBottom: '1px solid #eee' }}>
+              内容行 {index + 1}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+};
+```
+
 ## API
 
 ### StickyContainerProps
@@ -207,6 +255,7 @@ export default () => {
 | boxShadow | 粘滞状态下组件的阴影样式 | `string` | `'0 2px 8px rgba(0,0,0,0.15)'` |
 | zIndex | 粘滞状态下组件的z-index值 | `number` | `1000` |
 | children | 需要应用粘滞效果的内容 | `ReactNode` | - |
+| sticky | 是否启用粘滞功能 | `boolean` | `true` |
 
 ## 工作原理
 
@@ -237,3 +286,4 @@ StickyContainer 组件通过以下方式实现粘滞效果：
 2. **水平同步**：为了实现水平滚动同步，容器需要有明确的滚动行为
 3. **固定元素检测**：组件会自动检测页面上的固定元素，但只检测位于页面顶部的元素
 4. **性能考虑**：在复杂的页面布局中，固定元素检测可能会影响性能，建议在必要时进行优化
+5. **粘滞功能控制**：通过 [sticky](file:///d:/work/agglo-tree-table/src/components/StickyContainer/index.tsx#L27-L32) 属性可以动态控制是否启用粘滞功能，默认为启用状态

@@ -86,6 +86,9 @@ export interface VirtualTableProps {
   /** Whether column resizing is enabled */
   /** 是否启用列宽调整功能 */
   resizable?: boolean;
+  /** Whether to enable sticky header */
+  /** 是否启用粘性表头 */
+  sticky?: boolean;
 }
 
 // 添加VirtualTable的公开方法接口
@@ -140,6 +143,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     } = {},
     theme = 'default',
     resizable = true, // 默认启用列宽调整功能
+    sticky
   } = props;
 
   const [expandedRowKeys, setExpandedRowKeys] = useState(defaultExpandedRowKeys || []);
@@ -473,6 +477,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
             theme={tableTheme}
             onColumnWidthChange={handleColumnWidthChange}
             resizable={resizable}
+            sticky={sticky} // 传递sticky属性
           />
           {loading ? (
             <div className="virtual-table-loading">Loading...</div>
