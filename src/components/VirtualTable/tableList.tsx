@@ -127,6 +127,7 @@ const TableList = (props: TableListProps) => {
     newColumns: Record<string, any>[],
     index: number,
     expanded: string[],
+    columnWidth: Record<string, number>
   ): React.ReactNode => {
     return (
       <div
@@ -154,6 +155,7 @@ const TableList = (props: TableListProps) => {
               justifyContent: column.align === 'right' ? 'flex-end' : column.align === 'left' ? 'flex-start' : 'center',
               // 使用新的列边框配置
               borderRight: getColumnBorderStyle(),
+              boxSizing: 'border-box',
             }}
             onClick={column.onCellClick ? () => column.onCellClick(dataItem, index, expanded, dataItem._layer) : undefined}
           >
@@ -193,7 +195,7 @@ const TableList = (props: TableListProps) => {
           itemKey={rowKey}
           className="virtual-list-container"
         >
-          {(item, index) => renderRow(item, columns, index, expandedRowKeys)}
+          {(item, index) => renderRow(item, columns, index, expandedRowKeys, columnWidth)}
         </List>
       ) : (
         <div

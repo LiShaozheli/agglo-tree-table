@@ -151,13 +151,12 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   const [newColumn, setNewColumn] = useState<any[]>([]);
   const [tableWidth, setTableWidth] = useState(0);
   const [newColumnsWidth, setNewColumnsWidth] = useState<Record<string, number>>({});
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({}); // 添加列宽状态
 
   const tableRef = useRef<HTMLDivElement>(null);
 
   // 处理列宽变化
   const handleColumnWidthChange = (dataIndex: string, newWidth: number) => {
-    setColumnWidths(prev => ({
+    setNewColumnsWidth(prev => ({
       ...prev,
       [dataIndex]: newWidth
     }));
@@ -233,11 +232,9 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   const expandColum = {
     width: expandColumnWidth,
     title: showExpandAll ?
-      <div style={{
-        display: 'flex',
-      }}>
-        <span>{expandColumnTitle}</span>
-        <span>
+      <div>
+        <div>{expandColumnTitle}</div>
+        <div>
           {expandedRowKeys.length === 0 && <PlusSquareOutlined
             style={{
               color: tableTheme.primaryColor || '#1890ff',
@@ -252,7 +249,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
             }}
             onClick={collapseAll}
           />}
-        </span>
+        </div>
       </div>
       : expandColumnTitle,
     dataIndex: expandDataIndex,
@@ -319,38 +316,58 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     } else {
       setOriginalColumns(getColumns(columns, displayColumns));
     }
-  }, [columns, displayColumns, showExpandAll, expandColumnTitle, tableTheme]);
+  }, [columns, displayColumns, showExpandAll, expandColumnTitle, tableTheme, expandedRowKeys]);
 
-  const getNewCloumns = (cols: any[]) => {
+  const getNewCloumns = (column: any[]) => {
     const colsWidth: Record<string, number> = {};
-    const newCloumns: any[] = [];
+    const colsNoWidth: Record<string, number> = {};
+    let totolWidth = 0;
 
-    cols.forEach((item) => {
-      // 处理列宽 - 优先使用用户调整的宽度
-      let width = item.width || 100;
-      if (columnWidths[item.dataIndex]) {
-        width = columnWidths[item.dataIndex];
-      }
-      colsWidth[item.dataIndex] = width;
+    const getCol = (oldColumns: any[]): any[] => {
+      let cols: any[] = [];
 
-      const newItem = { ...item, width };
-      if (item.children) {
-        const { colsWidth: childWidths, newCloumns: childColumns } = getNewCloumns(item.children);
-        newItem.children = childColumns;
-        // 合并子列的宽度信息
-        Object.assign(colsWidth, childWidths);
+      oldColumns.forEach(column => {
+        if (column.children?.length > 0) {
+          cols = [...cols, ...getCol(column.children)];
+        } else {
+          cols.push(column);
+          colsWidth[column.dataIndex] = column.width;
+          if (!column.width) {
+            colsNoWidth[column.dataIndex] = column.width;
+          }
+          totolWidth += column.width;
+        }
+      });
+      return cols;
+    };
+    const newCloumns = getCol(column);
+
+    if (totolWidth < tableWidth) {
+      if (Object.keys(colsNoWidth).length > 0) {
+        const width = Math.floor((tableWidth - totolWidth) / Object.keys(colsNoWidth).length);
+        Object.keys(colsNoWidth).forEach(key => {
+          colsNoWidth[key] = width;
+        });
+
+        Object.assign(colsWidth, colsNoWidth);
+      } else {
+        const proportion = totolWidth / tableWidth;
+        Object.keys(colsWidth).forEach(key => {
+          colsWidth[key] = Math.floor(colsWidth[key] / proportion);
+        });
       }
-      newCloumns.push(newItem);
-    });
+    }
 
     return { colsWidth, newCloumns };
   };
 
   useEffect(() => {
     const { colsWidth, newCloumns } = getNewCloumns(originalColumns);
+    console.log('colsWidth', colsWidth, newCloumns);
+
     setNewColumn(newCloumns);
     setNewColumnsWidth(colsWidth);
-  }, [originalColumns, tableWidth, columnWidths]); // 添加columnWidths依赖
+  }, [originalColumns, tableWidth]); // 添加columnWidths依赖
 
   return (
     <ResizeObserver

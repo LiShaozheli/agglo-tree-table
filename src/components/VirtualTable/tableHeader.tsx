@@ -177,6 +177,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
               borderRight: getHeaderColumnBorderStyle(),
               position: 'relative',
               width: columnWidth[column.dataIndex] || column.width,
+              boxSizing: 'border-box',
             }}
             data-dataindex={column.dataIndex}
           >
