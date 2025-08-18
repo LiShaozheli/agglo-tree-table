@@ -152,7 +152,6 @@ const TableList = (props: TableListProps) => {
             className="agglo-tree-table-cell"
             style={{
               width: columnWidth[column.dataIndex] || column.width,
-              justifyContent: column.align === 'right' ? 'flex-end' : column.align === 'left' ? 'flex-start' : 'center',
               // 使用新的列边框配置
               borderRight: getColumnBorderStyle(),
               boxSizing: 'border-box',
@@ -160,11 +159,14 @@ const TableList = (props: TableListProps) => {
             onClick={column.onCellClick ? () => column.onCellClick(dataItem, index, expanded, dataItem._layer) : undefined}
           >
             <div style={{
+              width: '100%',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               minWidth: 0, // 关键：允许 flex item 收缩以触发文本省略
               padding: '8px 12px', // 添加默认padding
+              textAlign: column.align || 'center',
+              boxSizing: 'border-box',
               ...(column.style || {}), // 将用户自定义样式移到内层
             }}>
               {column.render

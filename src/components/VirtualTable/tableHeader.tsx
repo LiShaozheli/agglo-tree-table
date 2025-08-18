@@ -178,31 +178,25 @@ const TableHeader: FC<TableHeaderProps> = props => {
               position: 'relative',
               width: columnWidth[column.dataIndex] || column.width,
               boxSizing: 'border-box',
+              height:
+                column.children?.length > 0
+                  ? headerRowHeight
+                  : (headerLayer - layer + 1) * headerRowHeight,
             }}
             data-dataindex={column.dataIndex}
           >
-            <div
-              style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height:
-                  column.children?.length > 0
-                    ? headerRowHeight
-                    : (headerLayer - layer + 1) * headerRowHeight,
-              }}
-            >
-              <div style={{ 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis', 
-                whiteSpace: 'nowrap',
-                minWidth: 0, // 关键：允许 flex item 收缩以触发文本省略
-                padding: '8px 12px', // 添加默认padding
-                ...(column.headerStyle || {}), // 将用户自定义样式移到内层
-              }}>
-                {column.title}
-              </div>
+            <div style={{
+              width: '100%',
+              textAlign: column.align || 'center',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0, // 关键：允许 flex item 收缩以触发文本省略
+              padding: '8px 12px', // 添加默认padding
+              boxSizing: 'border-box',
+              ...(column.headerStyle || {}), // 将用户自定义样式移到内层
+            }}>
+              {column.title}
             </div>
             {/* 列宽调整手柄 - 仅在启用时渲染 */}
             {resizable && (
