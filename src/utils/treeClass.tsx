@@ -35,8 +35,8 @@ export class TreeClass {
    * 从平面数据源创建树形数据
    * @param dataSource - Flat data array
    * @param dataSource - 平面数据数组
-   * @param keys - Keys to group by
-   * @param keys - 用于分组的键
+   * @param groupKeys - Keys to group by
+   * @param groupKeys - 用于分组的键
    * @param rowKey - Unique row key
    * @param rowKey - 唯一行键
    * @param expandDataIndex - Expand data index
@@ -45,10 +45,10 @@ export class TreeClass {
   public creatTreeData = (
     dataSource: Array<Record<string, any>>,
     keys: string[],
-    rowKey: string,
+    groupKeys: string,
     expandDataIndex: string
   ) => {
-    dataSource.forEach(item => this.pushData(this.treeData, item, keys, rowKey, expandDataIndex));
+    dataSource.forEach(item => this.pushData(this.treeData, item, keys, groupKeys, expandDataIndex));
   };
 
   /**
@@ -84,7 +84,7 @@ export class TreeClass {
       // 修复类型错误：确保 data 是 DataTreeType 类型再访问 children 属性
       const treeData = Array.isArray(data) ? { children: data } : data;
       obj.length = obj.length + (treeData?.length || treeData?.children?.length || 0);
-      
+
       // 修复类型错误：添加类型断言确保 data 是 DataTreeType 类型
       const dataItem = data as DataTreeType;
       Object.keys(data).forEach(key => {
@@ -136,7 +136,7 @@ export class TreeClass {
    * @param data - Data item
    * @param data - 数据项
    * @param keys - Keys to group by
-   * @param keys - 用于分组的键
+   * @param groupKeys - 用于分组的键
    * @param rowKey - Row key
    * @param rowKey - 行键
    * @param expandDataIndex - Expand data index
@@ -145,29 +145,29 @@ export class TreeClass {
   protected pushData = (
     dataArr: DataTreeType[],
     data: Record<string, any>,
-    keys: string[],
+    groupKeys: string[],
     rowKey: string,
     expandDataIndex: string
   ) => {
-    const thisKeys = [...keys];
+    const thisKeys = [...groupKeys];
     if (thisKeys.length < 1) return;
-    const key = thisKeys.shift();
+    const groupKey = thisKeys.shift();
 
-    if (key === undefined) return;
+    if (groupKey === undefined || groupKey === null) return;
 
-    const isHas = dataArr.some(item => item[expandDataIndex] === data[key]);
+    const isHas = dataArr.some(item => item[expandDataIndex] === data[groupKey]);
 
-    if (!isHas && key) {
+    if (!isHas) {
       dataArr.push({
-        [expandDataIndex]: data[key],
+        [expandDataIndex]: data[groupKey],
         children: [],
-        [rowKey]: `${data[key]}-${data[rowKey]}`,
-        _rowKey_: key,
+        [rowKey]: `${data[groupKey]}-${data[rowKey]}`,
+        _rowKey_: groupKey,
       });
     }
 
     dataArr.forEach(item => {
-      if (item[expandDataIndex] === data[key]) {
+      if (item[expandDataIndex] === data[groupKey]) {
         if (thisKeys.length > 0) {
           this.pushData(item.children || [], data, thisKeys, rowKey, expandDataIndex);
         } else {

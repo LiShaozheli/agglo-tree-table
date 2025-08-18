@@ -102,7 +102,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     displayColumns,
     loading,
     expandable,
-    sort = () => 1,
+    sort,
     showColumnManagement = false,
     columnManagerPosition = 'right',
     width = '100%',
@@ -149,7 +149,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
       // 修复类型错误：确保传递给 setNewDataSource 的始终是数组
       setNewDataSource(Array.isArray(newData) ? newData : [newData]);
     }
-  }, [dataSource, groupKeys, AggregateKeys, rowKey, expandDataIndex, sort]);
+  }, [dataSource, AggregateKeys, expandDataIndex, groupKeys, rowKey, sort]);
 
   // 使用useImperativeHandle暴露方法给父组件调用
   React.useImperativeHandle(ref, () => ({
