@@ -102,109 +102,77 @@ const TableList = (props: TableListProps) => {
     return `1px solid ${color}`;
   };
 
-  // 优化的交替行背景色计算方法
-  const getBackgroundColor = useMemo(() => {
-    // 创建一个映射来缓存行键到背景色的映射
-    const backgroundColorMap: Record<string, string> = {};
-    let globalIndex = 0;
-
-    // 遍历数据并为每个行键分配背景色
-    const traverse = (items: Array<Record<string, any>>, expanded: string[], depth: number = 0) => {
-      for (const item of items) {
-        const key = item[rowKey];
-        if (key !== undefined) {
-          // 根据全局索引确定背景色
-          backgroundColorMap[key] = globalIndex % 2 === 0
-            ? mergedTheme.alternatingRowBgColor || '#f5f5f5'
-            : mergedTheme.bodyBgColor || '#ffffff';
-          globalIndex++;
-
-          // 如果当前项已展开且有子项，则遍历子项
-          const children = item[childrenColumnName as keyof typeof item];
-          if (expanded.includes(key) && children && Array.isArray(children) && children.length > 0) {
-            traverse(children, expanded, depth + 1);
-          }
-        }
+  const getNewDataSource = (data: Record<string, any>[], Layer: number = 0) => {
+    const newDataSource = data.reduce((acc: Record<string, any>[], item: Record<string, any>) => {
+      const newItem = { ...item, _layer: Layer };
+      acc.push(newItem);
+      const isExpanded = expandedRowKeys.includes(item[rowKey]);
+      // 如果有子项，则递归处理
+      const children = item[childrenColumnName as keyof typeof item];
+      if (isExpanded && children && Array.isArray(children) && children.length > 0) {
+        const childItems = getNewDataSource(children, Layer + 1);
+        acc.push(...childItems);
       }
-    };
 
-    traverse(dataSource, expandedRowKeys);
+      return acc;
+    }, []);
+    return newDataSource;
+  };
 
-    // 返回一个函数，用于根据行键获取背景色
-    return (rowKey: string) => backgroundColorMap[rowKey] || mergedTheme.bodyBgColor || '#ffffff';
-  }, [dataSource, expandedRowKeys, rowKey, childrenColumnName, mergedTheme]);
+  // 获取新的数据源，添加层级信息
+  const newDataSource = useMemo(() => getNewDataSource(dataSource), [dataSource, rowKey, expandedRowKeys, childrenColumnName]);
 
   const renderRow = (
     dataItem: Record<string, any>,
     newColumns: Record<string, any>[],
     index: number,
     expanded: string[],
-    Layer: number = 0
   ): React.ReactNode => {
-    // 使用优化的方法获取背景色
-    const backgroundColor = getBackgroundColor(dataItem[rowKey]);
-    const isExpanded = expanded.includes(dataItem[rowKey]);
 
     return (
-      <React.Fragment key={dataItem[rowKey]}>
-        <div
-          className="agglo-tree-table-row"
-          style={{
-            display: 'flex',
-            backgroundColor: backgroundColor,
-            height: rowHeight,
-            color: mergedTheme.bodyTextColor,
-            fontSize: mergedTheme.fontSize,
-            // 使用新的行边框配置
-            borderBottom: getRowBorderStyle(),
-          }}
-          {...(onRow ? onRow(dataItem, index) : {})}
-        >
-          {newColumns.map((column: Record<string, any>) => (
-            <div
-              key={column.dataIndex}
-              className="agglo-tree-table-cell"
-              style={{
-                width: columnWidth[column.dataIndex] || column.width,
-                justifyContent: column.align === 'right' ? 'flex-end' : column.align === 'left' ? 'flex-start' : 'center',
-                // 使用新的列边框配置
-                borderRight: getColumnBorderStyle(),
-              }}
-              onClick={column.onCellClick ? () => column.onCellClick(dataItem, index) : undefined}
-            >
-              <div style={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                minWidth: 0, // 关键：允许 flex item 收缩以触发文本省略
-                padding: '8px 12px', // 添加默认padding
-                ...(column.style || {}), // 将用户自定义样式移到内层
-              }}>
-                {column.render
-                  ? column.render(dataItem[column.dataIndex], dataItem, index, expanded, Layer)
-                  : dataItem[column.dataIndex]}
-              </div>
+      <div
+        key={dataItem[rowKey]}
+        className="agglo-tree-table-row"
+        style={{
+          display: 'flex',
+          backgroundColor: index % 2 === 0
+            ? mergedTheme.alternatingRowBgColor || '#f5f5f5'
+            : mergedTheme.bodyBgColor || '#ffffff',
+          height: rowHeight,
+          color: mergedTheme.bodyTextColor,
+          fontSize: mergedTheme.fontSize,
+          // 使用新的行边框配置
+          borderBottom: getRowBorderStyle(),
+        }}
+        {...(onRow ? onRow(dataItem, index) : {})}
+      >
+        {newColumns.map((column: Record<string, any>) => (
+          <div
+            key={column.dataIndex}
+            className="agglo-tree-table-cell"
+            style={{
+              width: columnWidth[column.dataIndex] || column.width,
+              justifyContent: column.align === 'right' ? 'flex-end' : column.align === 'left' ? 'flex-start' : 'center',
+              // 使用新的列边框配置
+              borderRight: getColumnBorderStyle(),
+            }}
+            onClick={column.onCellClick ? () => column.onCellClick(dataItem, index, expanded, dataItem._layer) : undefined}
+          >
+            <div style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0, // 关键：允许 flex item 收缩以触发文本省略
+              padding: '8px 12px', // 添加默认padding
+              ...(column.style || {}), // 将用户自定义样式移到内层
+            }}>
+              {column.render
+                ? column.render(dataItem[column.dataIndex], dataItem, index, expanded, dataItem._layer)
+                : dataItem[column.dataIndex]}
             </div>
-          ))}
-        </div>
-        {(() => {
-          const children = dataItem[childrenColumnName as keyof typeof dataItem];
-          return children && Array.isArray(children) && children.length > 0 && (
-            <div
-              className="agglo-tree-table-expand-container"
-              style={{
-                overflow: 'hidden',
-                maxHeight: isExpanded ? '1000px' : '0',
-              }}
-            >
-              {isExpanded &&
-                children.map((item: Record<string, any>, ind: number) =>
-                  renderRow(item, newColumns, ind, expanded, Layer + 1)
-                )}
-            </div>
-          );
-        })()}
-      </React.Fragment>
+          </div>
+        ))}
+      </div>
     );
   };
 
@@ -218,20 +186,15 @@ const TableList = (props: TableListProps) => {
         .agglo-tree-table-row:hover {
           background-color: ${mergedTheme.rowHoverBgColor} !important;
         }
-        
-        .agglo-tree-table-expand-container {
-          overflow: hidden;
-          transition: max-height 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
-        }
       `}</style>
       {dataSource?.length > 0 ? (
         <List
-          data={dataSource}
+          data={newDataSource}
           height={0}
           itemKey={rowKey}
           className="virtual-list-container"
         >
-          {(item, index) => renderRow(item, columns, index, expandedRowKeys, 0)}
+          {(item, index) => renderRow(item, columns, index, expandedRowKeys)}
         </List>
       ) : (
         <div
