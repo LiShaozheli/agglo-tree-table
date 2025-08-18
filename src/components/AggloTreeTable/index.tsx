@@ -115,7 +115,6 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     if (displayColumns) return displayColumns;
     if (!columns) return [];
-    
     // 如果没有提供 displayColumns 且 columns 存在，则默认显示所有列
     return columns
       .filter(col => !col.children)
@@ -124,30 +123,15 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
   });
 
   const [expandRowByClick, setExpandRowByClick] = useState(false);
-  const [columnOrder, setColumnOrder] = useState<string[]>([]);
-  const virtualTableRef = useRef<VirtualTableHandles>(null);
-
-  useEffect(() => {
-    if (displayColumns) {
-      setVisibleColumns(displayColumns);
-    } else if (columns) {
-      // 如果没有提供 displayColumns，则默认显示所有列
-      const allColumnKeys = columns
-        .filter(col => !col.children)
-        .map(col => col.dataIndex)
-        .filter(Boolean) as string[];
-      setVisibleColumns(allColumnKeys);
-    }
-    
+  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
+    if (!columns) return [];
     // 初始化列顺序
-    if (columns) {
-      const allColumnKeys = columns
-        .filter(col => !col.children)
-        .map(col => col.dataIndex)
-        .filter(Boolean) as string[];
-      setColumnOrder(allColumnKeys);
-    }
-  }, [displayColumns, columns]);
+    return columns
+      .filter(col => !col.children)
+      .map(col => col.dataIndex)
+      .filter(Boolean) as string[];
+  });
+  const virtualTableRef = useRef<VirtualTableHandles>(null);
 
   useEffect(() => {
     if (groupKeys?.length < 1) {

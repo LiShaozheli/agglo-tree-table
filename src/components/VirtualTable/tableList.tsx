@@ -147,7 +147,7 @@ const TableList = (props: TableListProps) => {
       >
         {newColumns.map((column: Record<string, any>) => (
           <div
-            key={column.dataIndex}
+            key={`${dataItem[rowKey]}-${column.dataIndex}`}
             className="agglo-tree-table-cell"
             style={{
               width: columnWidth[column.dataIndex] || column.width,
