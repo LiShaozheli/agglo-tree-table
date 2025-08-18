@@ -128,7 +128,6 @@ const TableList = (props: TableListProps) => {
     index: number,
     expanded: string[],
   ): React.ReactNode => {
-
     return (
       <div
         key={dataItem[rowKey]}

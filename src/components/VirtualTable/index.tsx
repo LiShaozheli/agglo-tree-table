@@ -232,13 +232,37 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
 
   const expandColum = {
     width: expandColumnWidth,
-    title: expandColumnTitle,
+    title: showExpandAll ?
+      <div style={{
+        display: 'flex',
+      }}>
+        <span>{expandColumnTitle}</span>
+        <span>
+          {expandedRowKeys.length === 0 && <PlusSquareOutlined
+            style={{
+              color: tableTheme.primaryColor || '#1890ff',
+              fontSize: '16px',
+            }}
+            onClick={expandAll}
+          />}
+          {expandedRowKeys.length > 0 && <MinusSquareOutlined
+            style={{
+              color: tableTheme.primaryColor || '#1890ff',
+              fontSize: '16px',
+            }}
+            onClick={collapseAll}
+          />}
+        </span>
+      </div>
+      : expandColumnTitle,
     dataIndex: expandDataIndex,
     headerStyle: {
       display: 'flex',
       flexDirection: 'column',
     },
+    style: { cursor: 'pointer' },
     align: 'left',
+    onCellClick: (record: any, index: number, expanded: string[]) => isOrNotExpend(record[rowKey], expanded),
     render: (value: any, record: any, index: number, expanded: string[], Layer: number) => {
       const isExpend = expanded.includes(record[rowKey]);
       const getChiild = (data: any) => {
@@ -246,25 +270,19 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
         if (expandIcon) return expandIcon(isExpend, data[expandDataIndex], data);
 
         return (
-          <span
-            style={{
-              display: 'inline-flex',
-              cursor: 'pointer',
-              marginRight: '8px',
-              marginLeft: `${Layer * indentSize}px`,
-            }}
-            onClick={() => isOrNotExpend(record[rowKey], expanded)}
-          >
+          <>
             <CaretRightOutlined
               style={{
                 transform: isExpend ? 'rotate(90deg)' : 'rotate(0deg)',
                 transition: 'transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
                 verticalAlign: 'middle',
                 transformOrigin: 'center center',
+                marginRight: '8px',
+                marginLeft: `${Layer * indentSize}px`,
               }}
             />
             {`${data[expandDataIndex]}(${data.length || data.children.length})`}
-          </span>
+          </>
         );
       };
       return getChiild(record);
@@ -296,104 +314,12 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
 
   useEffect(() => {
     if (expandRowByClick) {
-      // 如果需要显示全部展开/收起按钮，则添加控制按钮到展开列标题
-      let finalExpandColumn = expandColum;
-      if (showExpandAll) {
-        finalExpandColumn = {
-          ...expandColum,
-          title: (
-            <div style={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <span>{expandColumnTitle}</span>
-              <div style={{
-                display: 'flex',
-                gap: '4px'
-              }}>
-                {!isAllExpanded && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      expandAll();
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '2px',
-                      color: tableTheme.primaryColor,
-                      cursor: 'pointer',
-                      transition: 'all 0.3s',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = tableTheme.rowHoverBgColor || '#f5f5f5';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                    title="全部展开"
-                  >
-                    <PlusSquareOutlined
-                      style={{
-                        color: tableTheme.primaryColor || '#1890ff',
-                        fontSize: '16px'
-                      }}
-                    />
-                  </button>
-                )}
-                {expandedRowKeys.length > 0 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      collapseAll();
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '2px',
-                      color: tableTheme.primaryColor,
-                      cursor: 'pointer',
-                      transition: 'all 0.3s',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = tableTheme.rowHoverBgColor || '#f5f5f5';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                    title="全部收起"
-                  >
-                    <MinusSquareOutlined
-                      style={{
-                        color: tableTheme.primaryColor || '#1890ff',
-                        fontSize: '16px'
-                      }}
-                    />
-                  </button>
-                )}
-              </div>
-            </div>
-          )
-        };
-      }
-
-      const Columns = [finalExpandColumn, ...getColumns(columns, displayColumns)];
+      const Columns = [expandColum, ...getColumns(columns, displayColumns)];
       setOriginalColumns(Columns);
     } else {
       setOriginalColumns(getColumns(columns, displayColumns));
     }
-  }, [columns, displayColumns, expandRowByClick, showExpandAll, expandColumnTitle, tableTheme, isAllExpanded, isAllCollapsed]);
+  }, [columns, displayColumns, showExpandAll, expandColumnTitle, tableTheme]);
 
   const getNewCloumns = (cols: any[]) => {
     const colsWidth: Record<string, number> = {};
