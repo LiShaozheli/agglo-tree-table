@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, useMemo, forwardRef, memo } from 'react';
+import { useImmer } from 'use-immer';
 import ResizeObserver from 'rc-resize-observer';
 import { CaretRightOutlined, PlusSquareOutlined, MinusSquareOutlined } from '@ant-design/icons';
 import type { TableTheme } from './themes';
@@ -147,35 +148,29 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   } = props;
 
   const [expandedRowKeys, setExpandedRowKeys] = useState(defaultExpandedRowKeys || []);
-  const [originalColumns, setOriginalColumns] = useState<any[]>([]);
+  const [originalColumns, setOriginalColumns] = useImmer<any[]>([]);
+  const [newColumn, setNewColumn] = useState<any[]>([]);
   const [tableWidth, setTableWidth] = useState(0);
 
   const tableRef = useRef<HTMLDivElement>(null);
 
   // 处理列宽变化
   const handleColumnWidthChange = (dataIndex: string, newWidth: number) => {
-    // 更新 originalColumns 中对应列的宽度
-    setOriginalColumns(prevColumns => {
-      const updateColumnWidth = (cols: any[]): any[] => {
-        return cols.map(column => {
+    // 使用 Immer 更新 originalColumns 中对应列的宽度
+    setOriginalColumns(draft => {
+      const updateColumnWidth = (cols: any[]) => {
+        cols.forEach(column => {
           if (column.children?.length > 0) {
             // 递归处理子列
-            return {
-              ...column,
-              children: updateColumnWidth(column.children)
-            };
+            updateColumnWidth(column.children);
           } else if (column.dataIndex === dataIndex) {
             // 更新匹配的列宽
-            return {
-              ...column,
-              width: newWidth
-            };
+            column.width = newWidth;
           }
-          return column;
         });
       };
 
-      return updateColumnWidth(prevColumns);
+      updateColumnWidth(draft);
     });
   };
 
