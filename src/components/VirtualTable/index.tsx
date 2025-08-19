@@ -149,7 +149,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
 
   const [expandedRowKeys, setExpandedRowKeys] = useState(defaultExpandedRowKeys || []);
   const [originalColumns, setOriginalColumns] = useImmer<any[]>([]);
-  const [newColumn, setNewColumn] = useState<any[]>([]);
   const [tableWidth, setTableWidth] = useState(0);
 
   const tableRef = useRef<HTMLDivElement>(null);

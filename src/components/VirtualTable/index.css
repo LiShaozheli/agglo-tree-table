@@ -12,3 +12,144 @@
 .virtual-table-min-width {
   min-width: max-content;
 }
+
+/* Table Header Styles */
+.virtual-table-header-container {
+  display: flex;
+}
+
+.virtual-table-header-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.virtual-table-header-position-ref {
+  background-color: inherit;
+}
+
+.virtual-table-header-table-bottom-ref {
+  position: absolute;
+  bottom: 0;
+  height: 1;
+  width: 100%;
+  visibility: hidden;
+}
+
+.virtual-table-header-sticky-wrapper {
+  overflow: hidden;
+  background-color: inherit;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border-radius: 4px;
+}
+
+.virtual-table-header-sticky-wrapper.sticky {
+  position: fixed;
+  z-index: 10;
+}
+
+.virtual-table-header-content {
+  position: relative;
+  min-width: max-content;
+}
+
+/* 删除了.virtual-table-header-content.sticky的冗余样式，因为它与非sticky状态样式重复 */
+
+/* Table List Styles */
+.agglo-tree-table-row {
+  transition: background-color 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  display: flex;
+}
+
+.agglo-tree-table-row:hover {
+  background-color: inherit;
+}
+
+.agglo-tree-table-cell {
+  display: inline-flex;
+  height: 100%;
+  white-space: nowrap;
+}
+
+.agglo-tree-table-cell-inner {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  padding: 8px 12px;
+  box-sizing: border-box;
+}
+
+.agglo-tree-table-cell-inner-center {
+  text-align: center;
+}
+
+.agglo-tree-table-cell-inner-left {
+  text-align: left;
+}
+
+.agglo-tree-table-cell-inner-right {
+  text-align: right;
+}
+
+.agglo-tree-table-header-cell-inner {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  padding: 0px 12px;
+  box-sizing: border-box;
+  align-items: center;
+  display: flex;
+}
+
+.agglo-tree-table-header-cell-inner-center {
+  text-align: center;
+  justify-content: center;
+}
+
+.agglo-tree-table-header-cell-inner-left {
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.agglo-tree-table-header-cell-inner-right {
+  text-align: right;
+  justify-content: flex-end;
+}
+
+.agglo-tree-table-expand-container {
+  overflow: hidden;
+  transition: max-height 0.3s;
+}
+
+.agglo-tree-table-empty {
+  width: 100%;
+  color: inherit;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.virtual-list-container {
+  overflow-y: visible;
+  z-index: 0;
+}
+
+/* Column Resizer */
+.virtual-table-column-resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  background-color: transparent;
+  z-index: 1;
+}
+
+.virtual-table-column-resizer:hover {
+  background-color: #1890ff;
+}

@@ -1,7 +1,6 @@
 import React, { FC, memo, useMemo, useState } from 'react';
 import { predefinedThemes, type TableTheme } from './themes';
 import StickyContainer from '../StickyContainer';
-import './tableHeader.css';
 import './index.css';
 
 /**
@@ -175,15 +174,12 @@ const TableHeader: FC<TableHeaderProps> = props => {
             }}
             data-dataindex={column.dataIndex}
           >
-            <div style={{
-              width: '100%',
-              textAlign: column.align || 'center',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              minWidth: 0, // 关键：允许 flex item 收缩以触发文本省略
-              padding: '0px 12px', // 添加默认padding
-              boxSizing: 'border-box',
+            <div className={`agglo-tree-table-header-cell-inner ${
+              column.align === 'right' ? 'agglo-tree-table-header-cell-inner-right' : 
+              column.align === 'left' ? 'agglo-tree-table-header-cell-inner-left' : 
+              'agglo-tree-table-header-cell-inner-center'
+            }`}
+            style={{
               height:
                 column.children?.length > 0
                   ? headerRowHeight
@@ -191,7 +187,6 @@ const TableHeader: FC<TableHeaderProps> = props => {
               lineHeight: column.children?.length > 0
                 ? headerRowHeight + 'px'
                 : (headerLayer - layer + 1) * headerRowHeight + 'px',
-              alignItems: 'center',
               ...(column.headerStyle || {}), // 将用户自定义样式移到内层
             }}>
               {column.title}
@@ -200,15 +195,9 @@ const TableHeader: FC<TableHeaderProps> = props => {
             {resizable && (!column.children || column.children?.length === 0) && (
               <div
                 onMouseDown={(e) => handleResizeStart(column.dataIndex, e)}
+                className="virtual-table-column-resizer"
                 style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: '5px',
-                  cursor: 'col-resize',
                   backgroundColor: 'transparent',
-                  zIndex: 1,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = theme.primaryColor || '#1890ff';

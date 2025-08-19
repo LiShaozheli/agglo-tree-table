@@ -1,7 +1,6 @@
 import React, { memo, useMemo } from 'react';
 import List from 'rc-virtual-list';
 import { predefinedThemes, type TableTheme } from './themes';
-import './tableList.css';
 import './index.css';
 
 /**
@@ -75,25 +74,6 @@ const TableList = (props: TableListProps) => {
     theme = predefinedThemes.default,
   } = props;
 
-  // 默认主题
-  const defaultTheme: TableTheme = {
-    primaryColor: '#1890ff',
-    headerBgColor: '#f0f0f0',
-    headerTextColor: '#333',
-    bodyBgColor: '#ffffff',
-    bodyTextColor: '#333',
-    borderColor: '#ccc',
-    rowHoverBgColor: '#f5f5f5',
-    alternatingRowBgColor: '#f5f5f5',
-    fontSize: 14,
-    borderRadius: 2,
-    showColumnBorders: true,
-    showRowBorders: true,
-    showHeaderRowBorder: true,
-  };
-
-  // 合并主题配置
-
   // 获取行边框样式
   const getRowBorderStyle = () => {
     if (!theme.showRowBorders) return 'none';
@@ -152,10 +132,9 @@ const TableList = (props: TableListProps) => {
         key={dataItem[rowKey]}
         className="agglo-tree-table-row"
         style={{
-          display: 'flex',
           backgroundColor: index % 2 === 0
-            ? theme.alternatingRowBgColor || '#f5f5f5'
-            : theme.bodyBgColor || '#ffffff',
+            ? theme.bodyBgColor || '#ffffff'
+            : theme.alternatingRowBgColor || '#f5f5f5',
           height: rowHeight,
           color: theme.bodyTextColor,
           fontSize: theme.fontSize,
@@ -175,15 +154,12 @@ const TableList = (props: TableListProps) => {
             }}
             onClick={column.onCellClick ? () => column.onCellClick(dataItem, index, expanded, dataItem._layer) : undefined}
           >
-            <div style={{
-              width: '100%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              minWidth: 0, // 关键：允许 flex item 收缩以触发文本省略
-              padding: '8px 12px', // 添加默认padding
-              textAlign: column.align || 'center',
-              boxSizing: 'border-box',
+            <div className={`agglo-tree-table-cell-inner ${
+              column.align === 'right' ? 'agglo-tree-table-cell-inner-right' : 
+              column.align === 'left' ? 'agglo-tree-table-cell-inner-left' : 
+              'agglo-tree-table-cell-inner-center'
+            }`}
+            style={{
               ...(column.style || {}), // 将用户自定义样式移到内层
             }}>
               {column.render
