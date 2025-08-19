@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from 'react';
 import List from 'rc-virtual-list';
-import type { TableTheme } from './themes';
+import { predefinedThemes, type TableTheme } from './themes';
 import './tableList.css';
 import './index.css';
 
@@ -41,7 +41,7 @@ interface TableListProps {
  */
 const flattenColumns = (columns: any[]): any[] => {
   const result: any[] = [];
-  
+
   const traverse = (cols: any[]) => {
     cols.forEach(column => {
       if (column.children?.length > 0) {
@@ -51,7 +51,7 @@ const flattenColumns = (columns: any[]): any[] => {
       }
     });
   };
-  
+
   traverse(columns);
   return result;
 };
@@ -72,7 +72,7 @@ const TableList = (props: TableListProps) => {
     rowHeight,
     childrenColumnName,
     onRow,
-    theme,
+    theme = predefinedThemes.default,
   } = props;
 
   // 默认主题
@@ -93,29 +93,28 @@ const TableList = (props: TableListProps) => {
   };
 
   // 合并主题配置
-  const mergedTheme: TableTheme = { ...defaultTheme, ...theme };
 
   // 获取行边框样式
   const getRowBorderStyle = () => {
-    if (!mergedTheme.showRowBorders) return 'none';
+    if (!theme.showRowBorders) return 'none';
 
-    if (mergedTheme.rowBorderStyle) {
-      return mergedTheme.rowBorderStyle;
+    if (theme.rowBorderStyle) {
+      return theme.rowBorderStyle;
     }
 
-    const color = mergedTheme.rowBorderColor || mergedTheme.borderColor || '#ccc';
+    const color = theme.rowBorderColor || theme.borderColor || '#ccc';
     return `1px solid ${color}`;
   };
 
   // 获取列边框样式
   const getColumnBorderStyle = () => {
-    if (!mergedTheme.showColumnBorders) return 'none';
+    if (!theme.showColumnBorders) return 'none';
 
-    if (mergedTheme.columnBorderStyle) {
-      return mergedTheme.columnBorderStyle;
+    if (theme.columnBorderStyle) {
+      return theme.columnBorderStyle;
     }
 
-    const color = mergedTheme.borderColor || '#ccc';
+    const color = theme.borderColor || '#ccc';
     return `1px solid ${color}`;
   };
 
@@ -138,7 +137,7 @@ const TableList = (props: TableListProps) => {
 
   // 获取新的数据源，添加层级信息
   const newDataSource = useMemo(() => getNewDataSource(dataSource), [dataSource, rowKey, expandedRowKeys, childrenColumnName]);
-  
+
   // 展平列结构以用于渲染行
   const flattenedColumns = useMemo(() => flattenColumns(columns), [columns]);
 
@@ -155,11 +154,11 @@ const TableList = (props: TableListProps) => {
         style={{
           display: 'flex',
           backgroundColor: index % 2 === 0
-            ? mergedTheme.alternatingRowBgColor || '#f5f5f5'
-            : mergedTheme.bodyBgColor || '#ffffff',
+            ? theme.alternatingRowBgColor || '#f5f5f5'
+            : theme.bodyBgColor || '#ffffff',
           height: rowHeight,
-          color: mergedTheme.bodyTextColor,
-          fontSize: mergedTheme.fontSize,
+          color: theme.bodyTextColor,
+          fontSize: theme.fontSize,
           // 使用新的行边框配置
           borderBottom: getRowBorderStyle(),
         }}
@@ -205,7 +204,7 @@ const TableList = (props: TableListProps) => {
         }
         
         .agglo-tree-table-row:hover {
-          background-color: ${mergedTheme.rowHoverBgColor} !important;
+          background-color: ${theme.rowHoverBgColor} !important;
         }
       `}</style>
       {dataSource?.length > 0 ? (
@@ -221,7 +220,7 @@ const TableList = (props: TableListProps) => {
         <div
           className="agglo-tree-table-empty"
           style={{
-            color: mergedTheme.bodyTextColor,
+            color: theme.bodyTextColor,
           }}
         >
           No data available

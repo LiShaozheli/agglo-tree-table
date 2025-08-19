@@ -1,5 +1,5 @@
 import React, { FC, memo, useMemo, useState } from 'react';
-import type { TableTheme } from './themes';
+import { predefinedThemes, type TableTheme } from './themes';
 import StickyContainer from '../StickyContainer';
 import './tableHeader.css';
 import './index.css';
@@ -44,7 +44,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
     columns,
     headerRowHeight = 40,
     containerRef,
-    theme,
+    theme = predefinedThemes.default,
     onColumnWidthChange,
     resizable = true, // 默认启用列宽调整功能
     sticky = true, // 默认启用粘性表头
@@ -71,55 +71,36 @@ const TableHeader: FC<TableHeaderProps> = props => {
     return map;
   }, [columns]);
 
-  // 默认主题
-  const defaultTheme: TableTheme = {
-    primaryColor: '#1890ff',
-    headerBgColor: '#f0f0f0',
-    headerTextColor: '#333',
-    bodyBgColor: '#ffffff',
-    bodyTextColor: '#333',
-    borderColor: '#ccc',
-    rowHoverBgColor: '#f5f5f5',
-    alternatingRowBgColor: '#f5f5f5',
-    fontSize: 14,
-    borderRadius: 2,
-    showColumnBorders: true,
-    showRowBorders: true,
-  };
-
-  // 合并主题配置
-  const mergedTheme: TableTheme = { ...defaultTheme, ...theme };
-
   // 获取表头行边框样式
   const getHeaderRowBorderStyle = () => {
     // 表头始终显示行分割线，除非明确设置为不显示
-    if (mergedTheme.showHeaderRowBorder === false) return 'none';
+    if (theme.showHeaderRowBorder === false) return 'none';
 
-    if (mergedTheme.headerRowBorderStyle) {
-      return mergedTheme.headerRowBorderStyle;
+    if (theme.headerRowBorderStyle) {
+      return theme.headerRowBorderStyle;
     }
 
-    if (mergedTheme.rowBorderStyle) {
-      return mergedTheme.rowBorderStyle;
+    if (theme.rowBorderStyle) {
+      return theme.rowBorderStyle;
     }
 
-    const color = mergedTheme.rowBorderColor || mergedTheme.borderColor || '#ccc';
+    const color = theme.rowBorderColor || theme.borderColor || '#ccc';
     return `1px solid ${color}`;
   };
 
   // 获取表头列边框样式
   const getHeaderColumnBorderStyle = () => {
-    if (!mergedTheme.showColumnBorders) return 'none';
+    if (!theme.showColumnBorders) return 'none';
 
-    if (mergedTheme.headerColumnBorderStyle) {
-      return mergedTheme.headerColumnBorderStyle;
+    if (theme.headerColumnBorderStyle) {
+      return theme.headerColumnBorderStyle;
     }
 
-    if (mergedTheme.columnBorderStyle) {
-      return mergedTheme.columnBorderStyle;
+    if (theme.columnBorderStyle) {
+      return theme.columnBorderStyle;
     }
 
-    const color = mergedTheme.borderColor || '#ccc';
+    const color = theme.borderColor || '#ccc';
     return `1px solid ${color}`;
   };
 
@@ -173,13 +154,13 @@ const TableHeader: FC<TableHeaderProps> = props => {
       <div
         style={{
           display: 'flex',
-          backgroundColor: mergedTheme.headerBgColor,
-          color: mergedTheme.headerTextColor,
-          fontSize: mergedTheme.fontSize,
-          fontWeight: mergedTheme.headerFontWeight || 'normal',
+          backgroundColor: theme.headerBgColor,
+          color: theme.headerTextColor,
+          fontSize: theme.fontSize,
+          fontWeight: theme.headerFontWeight || 'normal',
           // 只在最外层添加底部边框，避免嵌套表头出现多条横向分割线
           borderBottom: layer === 0 ? getHeaderRowBorderStyle() : 'none',
-          borderRadius: mergedTheme.borderRadius,
+          borderRadius: theme.borderRadius,
         }}
         key={`header-layer-${layer}-${number}`}
       >
@@ -230,7 +211,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
                   zIndex: 1,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = mergedTheme.primaryColor || '#1890ff';
+                  e.currentTarget.style.backgroundColor = theme.primaryColor || '#1890ff';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
