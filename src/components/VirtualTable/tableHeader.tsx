@@ -108,7 +108,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
     return `1px solid ${color}`;
   };
 
-  const renderHeader = (oldColumns: Record<string, any>, layer = 0) => {
+  const renderHeader = (oldColumns: Record<string, any>, layer = 0, number?: number) => {
     if (layer > headerLayer) setHeaderLayer(layer);
 
     // 列宽调整处理函数 - 只更新当前表格中的列
@@ -166,10 +166,11 @@ const TableHeader: FC<TableHeaderProps> = props => {
           borderBottom: layer === 0 ? getHeaderRowBorderStyle() : 'none',
           borderRadius: mergedTheme.borderRadius,
         }}
+        key={`header-layer-${layer}-${number}`}
       >
         {oldColumns.map((column: any, index: number) => (
           <div
-            key={column.key || column.dataIndex}
+            key={column.key || column.dataIndex || index}
             style={{
               // 为非最后一个子元素添加右边框，避免重复边框线
               borderRight: index < oldColumns.length - 1 ? getHeaderColumnBorderStyle() : 'none',
@@ -221,7 +222,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
                 }}
               />
             )}
-            {column.children?.length > 0 && renderHeader(column.children, layer + 1)}
+            {column.children?.length > 0 && renderHeader(column.children, layer + 1, index)}
           </div>
         ))}
       </div>
