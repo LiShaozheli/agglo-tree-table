@@ -207,29 +207,13 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     onCollapseAll?.();
   };
 
-  // 检查是否所有可展开的行都已展开
-  const isAllExpanded = useMemo(() => {
-    if (!dataSource || dataSource.length === 0) return false;
-
-    return allRowKeys.length > 0 &&
-      allRowKeys.every(key => expandedRowKeys.includes(key));
-  }, [dataSource, expandedRowKeys, allRowKeys]);
-
-  // 检查是否所有可展开的行都已收起
-  const isAllCollapsed = useMemo(() => {
-    if (!dataSource || dataSource.length === 0) return true;
-
-    return allRowKeys.length === 0 ||
-      !expandedRowKeys.some(key => allRowKeys.includes(key));
-  }, [dataSource, expandedRowKeys, allRowKeys]);
-
   // 使用useImperativeHandle暴露方法给父组件调用
   useImperativeHandle(ref, () => ({
     expandAll,
     collapseAll,
   }));
 
-  const expandColum = {
+  const expandColum = useMemo(() => ({
     width: expandColumnWidth,
     title: showExpandAll ?
       <div>
@@ -284,7 +268,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
       };
       return getChiild(record);
     },
-  };
+  }), [expandColumnWidth, showExpandAll, expandColumnTitle, expandDataIndex, tableTheme.primaryColor, indentSize, expandIcon, rowKey, expandRowByClick]);
 
   const getColumns = (cols: any[], displayCols?: string[]): any[] => {
     // 如果没有指定 displayColumns，则显示所有列
@@ -308,15 +292,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     });
     return newColumns;
   };
-
-  useEffect(() => {
-    if (expandRowByClick) {
-      const Columns = [expandColum, ...getColumns(columns, displayColumns)];
-      setOriginalColumns(Columns);
-    } else {
-      setOriginalColumns(getColumns(columns, displayColumns));
-    }
-  }, [columns, displayColumns, showExpandAll, expandColumnTitle, tableTheme, expandedRowKeys]);
 
   const getNewCloumns = (column: any[]) => {
     const colsWidth: Record<string, number> = {};
@@ -362,12 +337,14 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   };
 
   useEffect(() => {
-    const { colsWidth, newCloumns } = getNewCloumns(originalColumns);
-    console.log('colsWidth', colsWidth, newCloumns);
-
+    const filteredColumns = getColumns(columns, displayColumns);
+    // 只有当启用expandRowByClick时才添加expandColum
+    const expandedColumns = expandRowByClick ? [expandColum, ...filteredColumns] : filteredColumns;
+    setOriginalColumns(expandedColumns);
+    const { colsWidth, newCloumns } = getNewCloumns(expandedColumns);
     setNewColumn(newCloumns);
     setNewColumnsWidth(colsWidth);
-  }, [originalColumns, tableWidth]); // 添加columnWidths依赖
+  }, [columns, displayColumns, expandRowByClick, expandColum]);
 
   return (
     <ResizeObserver

@@ -101,29 +101,31 @@ export default () => {
       pv: 7500,
     }
   ];
-  
-  const tableRef = useRef<AggloTreeTableHandles>(null);
+
+  const ref = useRef<AggloTreeTableHandles>(null);
 
   return (
     <div>
-      <div style={{ marginBottom: '10px' }}>
-        <button onClick={() => tableRef.current?.expandAll()}>全部展开</button>
-        <button onClick={() => tableRef.current?.collapseAll()} style={{ marginLeft: '10px' }}>全部收起</button>
-      </div>
+      <button onClick={() => ref.current?.expandAll()}>全部展开</button>
+      <button onClick={() => ref.current?.collapseAll()}>全部收起</button>
       <AggloTreeTable
-        ref={tableRef}
+        ref={ref}
         columns={columns}
         dataSource={data}
         groupKeys={['assetClass', 'sector']}
         rowKey="id"
-        expandable={{
-          showExpandAll: true,
-        }}
+        showExpandAll
       />
     </div>
   );
 };
 ```
+
+### 嵌套表头示例
+
+AggloTreeTable 支持嵌套表头，可以创建复杂的表头结构来更好地组织和展示数据。
+
+<code src="../../../examples/nested-header-example.tsx" title="嵌套表头示例" description="展示如何使用嵌套表头来组织复杂的表格结构"></code>
 
 ## API
 

@@ -108,8 +108,6 @@ const TableHeader: FC<TableHeaderProps> = props => {
     return `1px solid ${color}`;
   };
 
-
-
   const renderHeader = (oldColumns: Record<string, any>, layer = 0) => {
     if (layer > headerLayer) setHeaderLayer(layer);
 
@@ -164,24 +162,19 @@ const TableHeader: FC<TableHeaderProps> = props => {
           color: mergedTheme.headerTextColor,
           fontSize: mergedTheme.fontSize,
           fontWeight: mergedTheme.headerFontWeight || 'normal',
-          // 使用表头专用的行边框配置
-          borderBottom: getHeaderRowBorderStyle(),
-          borderRadius: mergedTheme.borderRadius
+          // 只在最外层添加底部边框，避免嵌套表头出现多条横向分割线
+          borderBottom: layer === 0 ? getHeaderRowBorderStyle() : 'none',
+          borderRadius: mergedTheme.borderRadius,
         }}
       >
-        {oldColumns.map((column: any) => (
+        {oldColumns.map((column: any, index: number) => (
           <div
             key={column.key || column.dataIndex}
             style={{
-              // 使用表头专用的列边框配置
-              borderRight: getHeaderColumnBorderStyle(),
+              // 为非最后一个子元素添加右边框，避免重复边框线
+              borderRight: index < oldColumns.length - 1 ? getHeaderColumnBorderStyle() : 'none',
               position: 'relative',
               width: columnWidth[column.dataIndex] || column.width,
-              boxSizing: 'border-box',
-              height:
-                column.children?.length > 0
-                  ? headerRowHeight
-                  : (headerLayer - layer + 1) * headerRowHeight,
             }}
             data-dataindex={column.dataIndex}
           >
@@ -192,14 +185,22 @@ const TableHeader: FC<TableHeaderProps> = props => {
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               minWidth: 0, // 关键：允许 flex item 收缩以触发文本省略
-              padding: '8px 12px', // 添加默认padding
+              padding: '0px 12px', // 添加默认padding
               boxSizing: 'border-box',
+              height:
+                column.children?.length > 0
+                  ? headerRowHeight
+                  : (headerLayer - layer + 1) * headerRowHeight,
+              lineHeight: column.children?.length > 0
+                ? headerRowHeight + 'px'
+                : (headerLayer - layer + 1) * headerRowHeight + 'px',
+              alignItems: 'center',
               ...(column.headerStyle || {}), // 将用户自定义样式移到内层
             }}>
               {column.title}
             </div>
             {/* 列宽调整手柄 - 仅在启用时渲染 */}
-            {resizable && (
+            {resizable && (!column.children || column.children?.length === 0) && (
               <div
                 onMouseDown={(e) => handleResizeStart(column.dataIndex, e)}
                 style={{
