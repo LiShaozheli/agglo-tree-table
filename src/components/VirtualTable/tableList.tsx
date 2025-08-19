@@ -124,7 +124,7 @@ const TableList = (props: TableListProps) => {
 
   const renderRow = (
     dataItem: Record<string, any>,
-    newColumns: Record<string, any>[],
+    columns: Record<string, any>[],
     index: number,
     expanded: string[],
     columnWidth: Record<string, number>
@@ -146,14 +146,14 @@ const TableList = (props: TableListProps) => {
         }}
         {...(onRow ? onRow(dataItem, index) : {})}
       >
-        {newColumns.map((column: Record<string, any>, colIndex: number) => (
+        {columns.map((column: Record<string, any>, colIndex: number) => (
           <div
             key={`${dataItem[rowKey]}-${column.dataIndex}`}
             className="agglo-tree-table-cell"
             style={{
               width: columnWidth[column.dataIndex] || column.width,
               // 只为非最后一列添加右边框
-              borderRight: colIndex < newColumns.length - 1 ? getColumnBorderStyle() : 'none',
+              borderRight: colIndex < columns.length - 1 ? getColumnBorderStyle() : 'none',
             }}
             onClick={column.onCellClick ? () => column.onCellClick(dataItem, index, expanded, dataItem._layer) : undefined}
           >
