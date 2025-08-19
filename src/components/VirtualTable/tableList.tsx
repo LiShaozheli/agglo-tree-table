@@ -30,13 +30,31 @@ interface TableListProps {
   /** Row event handler */
   /** 行事件处理器 */
   onRow?: (record: any, index: any) => Record<string, any>;
-  /** Column widths */
-  /** 列宽度 */
-  columnWidth: Record<string, number>;
   /** Table theme */
   /** 表格主题 */
   theme?: TableTheme;
 }
+
+/**
+ * Flatten nested columns into a single array
+ * 将嵌套列展平为单个数组
+ */
+const flattenColumns = (columns: any[]): any[] => {
+  const result: any[] = [];
+  
+  const traverse = (cols: any[]) => {
+    cols.forEach(column => {
+      if (column.children?.length > 0) {
+        traverse(column.children);
+      } else {
+        result.push(column);
+      }
+    });
+  };
+  
+  traverse(columns);
+  return result;
+};
 
 /**
  * A virtualized list component for rendering table rows.
@@ -52,7 +70,6 @@ const TableList = (props: TableListProps) => {
     columns,
     expandedRowKeys,
     rowHeight,
-    columnWidth,
     childrenColumnName,
     onRow,
     theme,
@@ -121,13 +138,15 @@ const TableList = (props: TableListProps) => {
 
   // 获取新的数据源，添加层级信息
   const newDataSource = useMemo(() => getNewDataSource(dataSource), [dataSource, rowKey, expandedRowKeys, childrenColumnName]);
+  
+  // 展平列结构以用于渲染行
+  const flattenedColumns = useMemo(() => flattenColumns(columns), [columns]);
 
   const renderRow = (
     dataItem: Record<string, any>,
     columns: Record<string, any>[],
     index: number,
-    expanded: string[],
-    columnWidth: Record<string, number>
+    expanded: string[]
   ): React.ReactNode => {
     return (
       <div
@@ -151,7 +170,7 @@ const TableList = (props: TableListProps) => {
             key={`${dataItem[rowKey]}-${column.dataIndex}`}
             className="agglo-tree-table-cell"
             style={{
-              width: columnWidth[column.dataIndex] || column.width,
+              width: column.width,
               // 只为非最后一列添加右边框
               borderRight: colIndex < columns.length - 1 ? getColumnBorderStyle() : 'none',
             }}
@@ -196,7 +215,7 @@ const TableList = (props: TableListProps) => {
           itemKey={rowKey}
           className="virtual-list-container"
         >
-          {(item, index) => renderRow(item, columns, index, expandedRowKeys, columnWidth)}
+          {(item, index) => renderRow(item, flattenedColumns, index, expandedRowKeys)}
         </List>
       ) : (
         <div

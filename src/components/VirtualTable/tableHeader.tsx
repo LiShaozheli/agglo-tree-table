@@ -1,4 +1,4 @@
-import React, { FC, memo, ReactNode, useEffect, useRef, useState } from 'react';
+import React, { FC, memo, useMemo, useState } from 'react';
 import type { TableTheme } from './themes';
 import StickyContainer from '../StickyContainer';
 import './tableHeader.css';
@@ -11,13 +11,10 @@ import './index.css';
 export interface TableHeaderProps {
   /** Table columns */
   /** 表格列 */
-  columns: Record<string, any>;
+  columns: Record<string, any>[];
   /** Header row height */
   /** 表头行高度 */
   headerRowHeight?: number;
-  /** Column widths */
-  /** 列宽度 */
-  columnWidth: Record<string, number>;
   /** Table container reference */
   /** 表格容器引用 */
   containerRef: React.RefObject<HTMLDivElement>;
@@ -46,7 +43,6 @@ const TableHeader: FC<TableHeaderProps> = props => {
   const {
     columns,
     headerRowHeight = 40,
-    columnWidth,
     containerRef,
     theme,
     onColumnWidthChange,
@@ -55,6 +51,25 @@ const TableHeader: FC<TableHeaderProps> = props => {
   } = props;
 
   const [headerLayer, setHeaderLayer] = useState(0);
+
+  // 预处理列宽信息，提高查找性能
+  const columnWidthMap = useMemo(() => {
+    const map: Record<string, number> = {};
+
+    const processColumns = (cols: any[]) => {
+      cols.forEach(column => {
+        if (column.dataIndex && column.width) {
+          map[column.dataIndex] = column.width;
+        }
+        if (column.children?.length > 0) {
+          processColumns(column.children);
+        }
+      });
+    };
+
+    processColumns(columns);
+    return map;
+  }, [columns]);
 
   // 默认主题
   const defaultTheme: TableTheme = {
@@ -117,7 +132,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
       e.stopPropagation();
 
       const startX = e.clientX;
-      const startWidth = columnWidth[dataIndex] || 100;
+      const startWidth = columnWidthMap[dataIndex] || 100;
       let currentWidth = startWidth;
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
@@ -175,7 +190,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
               // 为非最后一个子元素添加右边框，避免重复边框线
               borderRight: index < oldColumns.length - 1 ? getHeaderColumnBorderStyle() : 'none',
               position: 'relative',
-              width: columnWidth[column.dataIndex] || column.width,
+              width: column.width,
             }}
             data-dataindex={column.dataIndex}
           >

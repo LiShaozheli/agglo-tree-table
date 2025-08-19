@@ -148,18 +148,35 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
 
   const [expandedRowKeys, setExpandedRowKeys] = useState(defaultExpandedRowKeys || []);
   const [originalColumns, setOriginalColumns] = useState<any[]>([]);
-  const [newColumn, setNewColumn] = useState<any[]>([]);
   const [tableWidth, setTableWidth] = useState(0);
-  const [newColumnsWidth, setNewColumnsWidth] = useState<Record<string, number>>({});
 
   const tableRef = useRef<HTMLDivElement>(null);
 
   // 处理列宽变化
   const handleColumnWidthChange = (dataIndex: string, newWidth: number) => {
-    setNewColumnsWidth(prev => ({
-      ...prev,
-      [dataIndex]: newWidth
-    }));
+    // 更新 originalColumns 中对应列的宽度
+    setOriginalColumns(prevColumns => {
+      const updateColumnWidth = (cols: any[]): any[] => {
+        return cols.map(column => {
+          if (column.children?.length > 0) {
+            // 递归处理子列
+            return {
+              ...column,
+              children: updateColumnWidth(column.children)
+            };
+          } else if (column.dataIndex === dataIndex) {
+            // 更新匹配的列宽
+            return {
+              ...column,
+              width: newWidth
+            };
+          }
+          return column;
+        });
+      };
+
+      return updateColumnWidth(prevColumns);
+    });
   };
 
   // 处理主题配置
@@ -215,31 +232,34 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
 
   const expandColum = useMemo(() => ({
     width: expandColumnWidth,
-    title: showExpandAll ?
-      <div>
-        <div>{expandColumnTitle}</div>
-        <div>
-          {expandedRowKeys.length === 0 && <PlusSquareOutlined
+    title:
+      <>
+        <div style={{ flex: 1 }}></div>
+        <div style={{ flex: 1, textAlign: 'center' }}>{expandColumnTitle}</div>
+        <div style={{ flex: 1, textAlign: 'right' }}>
+          {showExpandAll && expandedRowKeys.length === 0 && <PlusSquareOutlined
             style={{
               color: tableTheme.primaryColor || '#1890ff',
               fontSize: '16px',
+              cursor: 'pointer',
             }}
             onClick={expandAll}
           />}
-          {expandedRowKeys.length > 0 && <MinusSquareOutlined
+          {showExpandAll && expandedRowKeys.length > 0 && <MinusSquareOutlined
             style={{
               color: tableTheme.primaryColor || '#1890ff',
               fontSize: '16px',
+              cursor: 'pointer',
             }}
             onClick={collapseAll}
           />}
         </div>
-      </div>
-      : expandColumnTitle,
+      </>,
     dataIndex: expandDataIndex,
     headerStyle: {
       display: 'flex',
-      flexDirection: 'column',
+      alignItems: 'center',
+      width: '100%'
     },
     style: { cursor: 'pointer' },
     align: 'left',
@@ -268,7 +288,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
       };
       return getChiild(record);
     },
-  }), [expandColumnWidth, showExpandAll, expandColumnTitle, expandDataIndex, tableTheme.primaryColor, indentSize, expandIcon, rowKey, expandRowByClick]);
+  }), [expandColumnWidth, expandedRowKeys, showExpandAll, expandColumnTitle, expandDataIndex, tableTheme.primaryColor, indentSize, expandIcon, rowKey, expandRowByClick]);
 
   const getColumns = (cols: any[], displayCols?: string[]): any[] => {
     // 如果没有指定 displayColumns，则显示所有列
@@ -293,58 +313,107 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     return newColumns;
   };
 
-  const getNewCloumns = (column: any[]) => {
-    const colsWidth: Record<string, number> = {};
-    const colsNoWidth: Record<string, number> = {};
-    let totolWidth = 0;
+  /**
+   * 处理列结构，保持原始嵌套结构并直接设置列宽到列属性中
+   * @param columns 原始列数组
+   * @returns 处理后的列数组，保持原始结构
+   */
+  const processColumnsWithWidth = (columns: any[]) => {
+    // 先计算总宽度和未设置宽度的列
+    let totalWidth = 0;
+    const colsNoWidth: Record<string, boolean> = {};
 
-    const getCol = (oldColumns: any[]): any[] => {
-      let cols: any[] = [];
-
-      oldColumns.forEach(column => {
+    const calculateWidth = (cols: any[]) => {
+      cols.forEach(column => {
         if (column.children?.length > 0) {
-          cols = [...cols, ...getCol(column.children)];
+          calculateWidth(column.children);
         } else {
-          cols.push(column);
-          colsWidth[column.dataIndex] = column.width;
           if (!column.width) {
-            colsNoWidth[column.dataIndex] = column.width;
+            colsNoWidth[column.dataIndex] = true;
           }
-          totolWidth += column.width;
+          totalWidth += column.width || 0;
         }
       });
-      return cols;
     };
-    const newCloumns = getCol(column);
 
-    if (totolWidth < tableWidth) {
-      if (Object.keys(colsNoWidth).length > 0) {
-        const width = Math.floor((tableWidth - totolWidth) / Object.keys(colsNoWidth).length);
-        Object.keys(colsNoWidth).forEach(key => {
-          colsNoWidth[key] = width;
-        });
+    calculateWidth(columns);
 
-        Object.assign(colsWidth, colsNoWidth);
-      } else {
-        const proportion = totolWidth / tableWidth;
-        Object.keys(colsWidth).forEach(key => {
-          colsWidth[key] = Math.floor(colsWidth[key] / proportion);
-        });
-      }
+    // 计算需要分配的宽度，考虑边框的影响
+    // 表格有竖向边框时，每个列间会有1px的边框，总共需要 (列数-1) 像素的边框宽度
+    const flatColumns = columns.flatMap(col => col.children || col);
+    const borderWidth = flatColumns.length > 0 ? (flatColumns.length - 1) : 0;
+    let extraWidthPerCol = 0;
+
+    // 如果总宽度小于表格宽度且存在未设置宽度的列，则平均分配剩余空间
+    if (totalWidth < (tableWidth - borderWidth) && Object.keys(colsNoWidth).length > 0) {
+      extraWidthPerCol = Math.floor(((tableWidth - borderWidth) - totalWidth) / Object.keys(colsNoWidth).length);
     }
 
-    return { colsWidth, newCloumns };
+    // 如果所有列都设置了宽度但总宽度小于表格宽度，则需要按比例调整
+    let proportion = 1;
+    if (totalWidth < (tableWidth - borderWidth) && Object.keys(colsNoWidth).length === 0 && totalWidth > 0) {
+      proportion = (tableWidth - borderWidth) / totalWidth;
+    }
+
+    // 如果有未设置宽度的列，同时总宽度（包括分配给未设置宽度列的宽度）仍小于表格宽度，
+    // 则所有列都需要按比例调整
+    const totalWidthWithExtra = totalWidth + extraWidthPerCol * Object.keys(colsNoWidth).length;
+    if (Object.keys(colsNoWidth).length > 0 && totalWidthWithExtra < (tableWidth - borderWidth) && totalWidthWithExtra > 0) {
+      proportion = (tableWidth - borderWidth) / totalWidthWithExtra;
+    }
+
+    // 创建新的列结构并设置宽度
+    const assignWidth = (cols: any[]): any[] => {
+      return cols.map(column => {
+        if (column.children?.length > 0) {
+          // 递归处理子列
+          return {
+            ...column,
+            children: assignWidth(column.children)
+          };
+        } else {
+          // 处理叶子节点列
+          let finalWidth = column.width || 0;
+
+          // 如果该列未设置宽度
+          if (!column.width) {
+            // 如果总宽度已经超过表格宽度，或者无法分配额外宽度，则设置默认宽度100px
+            if (totalWidth >= (tableWidth - borderWidth) || extraWidthPerCol <= 0) {
+              finalWidth = 100;
+            } else {
+              // 平均分配额外宽度给未设置宽度的列
+              finalWidth = extraWidthPerCol;
+            }
+          }
+          // 如果该列已设置宽度且需要按比例调整
+          else if (column.width && proportion !== 1) {
+            // 按比例调整已设置宽度的列
+            finalWidth = Math.floor(column.width * proportion);
+          }
+
+          // 如果该列未设置宽度且需要按比例调整（在分配了默认宽度或额外宽度后）
+          if (!column.width && proportion !== 1) {
+            finalWidth = Math.floor(finalWidth * proportion);
+          }
+
+          return {
+            ...column,
+            width: finalWidth
+          };
+        }
+      });
+    };
+
+    return assignWidth(columns);
   };
 
   useEffect(() => {
     const filteredColumns = getColumns(columns, displayColumns);
     // 只有当启用expandRowByClick时才添加expandColum
     const expandedColumns = expandRowByClick ? [expandColum, ...filteredColumns] : filteredColumns;
-    setOriginalColumns(expandedColumns);
-    const { colsWidth, newCloumns } = getNewCloumns(expandedColumns);
-    setNewColumn(newCloumns);
-    setNewColumnsWidth(colsWidth);
-  }, [columns, displayColumns, expandRowByClick, expandColum]);
+    const processedColumns = processColumnsWithWidth(expandedColumns);
+    setOriginalColumns(processedColumns);
+  }, [columns, displayColumns, expandRowByClick, expandColum, tableWidth]);
 
   return (
     <ResizeObserver
@@ -357,7 +426,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           <TableHeader
             columns={originalColumns}
             headerRowHeight={headerRowHeight}
-            columnWidth={newColumnsWidth}
             containerRef={tableRef} // 传递容器引用
             theme={tableTheme}
             onColumnWidthChange={handleColumnWidthChange}
@@ -370,12 +438,11 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
             <TableList
               rowKey={rowKey}
               dataSource={dataSource}
-              columns={newColumn}
+              columns={originalColumns}
               expandedRowKeys={expandedRowKeys}
               rowHeight={rowHeight}
               childrenColumnName={childrenColumnName}
               onRow={onRow}
-              columnWidth={newColumnsWidth}
               theme={tableTheme}
             />
           )}
