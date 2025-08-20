@@ -53,9 +53,90 @@ export default () => {
 };
 ```
 
+### 主题模式
+
+VirtualTable 支持明亮模式（默认）和暗黑模式两种主题。
+
+```tsx
+import React, { useState } from 'react';
+import { VirtualTable } from 'agglo-tree-table';
+
+export default () => {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  
+  const columns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      width: 150,
+    },
+    {
+      title: 'Age',
+      dataIndex: 'age',
+      width: 100,
+    },
+    {
+      title: 'Address',
+      dataIndex: 'address',
+    },
+  ];
+
+  const data = Array.from({ length: 100 }).map((_, index) => ({
+    key: index,
+    name: `Name ${index}`,
+    age: Math.floor(Math.random() * 100),
+    address: `Address ${index}`,
+  }));
+
+  return (
+    <div>
+      <div style={{ marginBottom: 16 }}>
+        <button 
+          type="button"
+          onClick={() => setTheme('light')}
+          style={{ 
+            marginRight: 8,
+            padding: '4px 12px',
+            backgroundColor: theme === 'light' ? '#1890ff' : '#f0f0f0',
+            color: theme === 'light' ? '#fff' : '#000',
+            border: '1px solid #d9d9d9',
+            borderRadius: 4,
+            cursor: 'pointer'
+          }}
+        >
+          明亮模式
+        </button>
+        <button 
+          type="button"
+          onClick={() => setTheme('dark')}
+          style={{ 
+            padding: '4px 12px',
+            backgroundColor: theme === 'dark' ? '#177ddc' : '#f0f0f0',
+            color: theme === 'dark' ? '#fff' : '#000',
+            border: '1px solid #d9d9d9',
+            borderRadius: 4,
+            cursor: 'pointer'
+          }}
+        >
+          暗黑模式
+        </button>
+      </div>
+      <div style={theme === 'dark' ? { background: '#141414', padding: '20px', borderRadius: '4px' } : {}}>
+        <VirtualTable
+          columns={columns}
+          dataSource={data}
+          rowKey="key"
+          theme={theme}
+        />
+      </div>
+    </div>
+  );
+};
+```
+
 ### 使用全部展开/收起功能
 
-通过 [showExpandAll](file:///d:/work/agglo-tree-table/src/components/VirtualTable/index.tsx#L36-L36) 属性启用全部展开/收起功能，并通过 ref 调用相关方法。
+通过 [showExpandAll](#expandable) 属性启用全部展开/收起功能，并通过 ref 调用相关方法。
 
 ```tsx
 import React, { useRef } from 'react';
@@ -129,8 +210,35 @@ export default () => {
   return (
     <div>
       <div style={{ marginBottom: '10px' }}>
-        <button onClick={() => tableRef.current?.expandAll()}>全部展开</button>
-        <button onClick={() => tableRef.current?.collapseAll()} style={{ marginLeft: '10px' }}>全部收起</button>
+        <button 
+          type="button"
+          onClick={() => tableRef.current?.expandAll()}
+          style={{ 
+            marginRight: 8,
+            padding: '4px 12px',
+            backgroundColor: '#1890ff',
+            color: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: 4,
+            cursor: 'pointer'
+          }}
+        >
+          全部展开
+        </button>
+        <button 
+          type="button"
+          onClick={() => tableRef.current?.collapseAll()}
+          style={{ 
+            padding: '4px 12px',
+            backgroundColor: '#1890ff',
+            color: '#fff',
+            border: '1px solid #d9d9d9',
+            borderRadius: 4,
+            cursor: 'pointer'
+          }}
+        >
+          全部收起
+        </button>
       </div>
       <VirtualTable
         ref={tableRef}
@@ -138,8 +246,6 @@ export default () => {
         dataSource={data}
         rowKey="id"
         expandable={{
-          expandRowByClick: true,
-          expandDataIndex: 'department',
           showExpandAll: true,
         }}
       />
@@ -163,6 +269,7 @@ export default () => {
 | displayColumns | 要显示的列（仅显示这些列） | `string[]` | `[]` |
 | loading | 加载状态 | `boolean` | `false` |
 | expandable | 可展开配置 | `ExpandableProps` | - |
+| theme | 主题模式 | `'light' \| 'dark'` | `'light'` |
 
 ### ExpandableProps
 
@@ -285,4 +392,3 @@ export default () => (
     }}
   />
 );
-```

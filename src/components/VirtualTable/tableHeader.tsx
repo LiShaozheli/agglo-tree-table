@@ -43,7 +43,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
     columns,
     headerRowHeight = 40,
     containerRef,
-    theme = predefinedThemes.default,
+    theme = predefinedThemes.light, // 默认使用明亮模式
     onColumnWidthChange,
     resizable = true, // 默认启用列宽调整功能
     sticky = true, // 默认启用粘性表头

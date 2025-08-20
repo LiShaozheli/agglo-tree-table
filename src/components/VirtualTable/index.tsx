@@ -83,7 +83,7 @@ export interface VirtualTableProps {
   expandable?: ExpandableProps;
   /** Table theme */
   /** 表格主题 */
-  theme?: 'default' | 'antd' | 'agGrid' | TableTheme;
+  theme?: 'default' | 'antd' | 'agGrid' | 'light' | 'dark' | TableTheme;
   /** Whether column resizing is enabled */
   /** 是否启用列宽调整功能 */
   resizable?: boolean;
@@ -142,7 +142,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
       onExpandAll,
       onCollapseAll,
     } = {},
-    theme = 'default',
+    theme = 'light', // 默认使用明亮模式
     resizable = true, // 默认启用列宽调整功能
     sticky
   } = props;

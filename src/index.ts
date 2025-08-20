@@ -1,10 +1,15 @@
 // Export AggloTreeTable component
+
+import { predefinedThemes } from './components/VirtualTable/themes';
+
 // 导出 AggloTreeTable 组件
 export { default as AggloTreeTable } from './components/AggloTreeTable';
 
 // Export VirtualTable component
 // 导出 VirtualTable 组件
 export { default as VirtualTable } from './components/VirtualTable';
+
+export { predefinedThemes };
 
 // Export StickyContainer component
 // 导出 StickyContainer 组件

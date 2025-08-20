@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useEffect } from 'react';
 import List from 'rc-virtual-list';
 import { predefinedThemes, type TableTheme } from './themes';
 import './index.css';
@@ -71,7 +71,7 @@ const TableList = (props: TableListProps) => {
     rowHeight,
     childrenColumnName,
     onRow,
-    theme = predefinedThemes.default,
+    theme = predefinedThemes.light, // 默认使用明亮模式
   } = props;
 
   // 获取行边框样式
@@ -98,6 +98,7 @@ const TableList = (props: TableListProps) => {
     return `1px solid ${color}`;
   };
 
+
   const getNewDataSource = (data: Record<string, any>[], Layer: number = 0) => {
     const newDataSource = data.reduce((acc: Record<string, any>[], item: Record<string, any>) => {
       const newItem = { ...item, _layer: Layer };
@@ -121,6 +122,18 @@ const TableList = (props: TableListProps) => {
   // 展平列结构以用于渲染行
   const flattenedColumns = useMemo(() => flattenColumns(columns), [columns]);
 
+  // 处理鼠标悬停事件
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>, rowHoverBgColor?: string) => {
+    e.currentTarget.style.backgroundColor = rowHoverBgColor || '#f5f5f5';
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>, index: number, bodyBgColor?: string, alternatingRowBgColor?: string) => {
+    // 恢复原来的背景色
+    e.currentTarget.style.backgroundColor = index % 2 === 0
+      ? (bodyBgColor || '#ffffff')
+      : (alternatingRowBgColor || '#f5f5f5');
+  };
+
   const renderRow = (
     dataItem: Record<string, any>,
     columns: Record<string, any>[],
@@ -141,6 +154,8 @@ const TableList = (props: TableListProps) => {
           // 使用新的行边框配置
           borderBottom: getRowBorderStyle(),
         }}
+        onMouseEnter={(e) => handleMouseEnter(e, theme.rowHoverBgColor)}
+        onMouseLeave={(e) => handleMouseLeave(e, index, theme.bodyBgColor, theme.alternatingRowBgColor)}
         {...(onRow ? onRow(dataItem, index) : {})}
       >
         {columns.map((column: Record<string, any>, colIndex: number) => (
@@ -177,10 +192,6 @@ const TableList = (props: TableListProps) => {
       <style>{`
         .agglo-tree-table-row {
           transition: background-color 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
-        }
-        
-        .agglo-tree-table-row:hover {
-          background-color: ${theme.rowHoverBgColor} !important;
         }
       `}</style>
       {dataSource?.length > 0 ? (

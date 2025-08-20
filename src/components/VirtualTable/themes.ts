@@ -1,4 +1,3 @@
-
 /**
  * Table theme configuration
  * 表格主题配置
@@ -122,4 +121,36 @@ export const predefinedThemes: Record<string, TableTheme> = {
     headerColumnBorderStyle: '1px solid #dee2e6',
     headerRowBorderStyle: '1px solid #dee2e6',
   },
+  // 明亮模式（默认）
+  light: {
+    primaryColor: '#1890ff',
+    headerBgColor: '#fafafa',
+    headerTextColor: '#000000d9',
+    bodyBgColor: '#ffffff',
+    bodyTextColor: '#000000d9',
+    borderColor: '#f0f0f0',
+    rowHoverBgColor: '#f5f5f5',
+    alternatingRowBgColor: '#fafafa',
+    fontSize: 14,
+    borderRadius: 2,
+    showColumnBorders: true,
+    showRowBorders: true,
+    showHeaderRowBorder: true,
+  },
+  // 暗黑模式
+  dark: {
+    primaryColor: '#177ddc',
+    headerBgColor: '#1d1d1d',
+    headerTextColor: '#ffffff',
+    bodyBgColor: '#141414',
+    bodyTextColor: '#ffffff',
+    borderColor: '#303030',
+    rowHoverBgColor: '#262626', // 使用较暗的悬停背景色
+    alternatingRowBgColor: '#1d1d1d',
+    fontSize: 14,
+    borderRadius: 2,
+    showColumnBorders: true,
+    showRowBorders: true,
+    showHeaderRowBorder: true,
+  }
 };

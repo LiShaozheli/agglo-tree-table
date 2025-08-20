@@ -78,7 +78,6 @@
   white-space: nowrap;
   min-width: 0;
   padding: 8px 12px;
-  box-sizing: border-box;
 }
 
 .agglo-tree-table-cell-inner-center {
@@ -100,24 +99,19 @@
   white-space: nowrap;
   min-width: 0;
   padding: 0px 12px;
-  box-sizing: border-box;
   align-items: center;
-  display: flex;
 }
 
 .agglo-tree-table-header-cell-inner-center {
   text-align: center;
-  justify-content: center;
 }
 
 .agglo-tree-table-header-cell-inner-left {
   text-align: left;
-  justify-content: flex-start;
 }
 
 .agglo-tree-table-header-cell-inner-right {
   text-align: right;
-  justify-content: flex-end;
 }
 
 .agglo-tree-table-expand-container {
