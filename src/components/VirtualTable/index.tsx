@@ -284,10 +284,32 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     },
   }), [expandColumnWidth, expandedRowKeys, showExpandAll, expandColumnTitle, expandDataIndex, tableTheme.primaryColor, indentSize, expandIcon, rowKey, expandRowByClick]);
 
+  // 修改 getColumns 函数，支持列的 visible 属性
   const getColumns = (cols: any[], displayCols?: string[]): any[] => {
-    // 如果没有指定 displayColumns，则显示所有列
+    // 如果没有指定 displayColumns，则显示所有 visible 不为 false 的列
     if (!displayCols) {
-      return cols;
+      const filterVisibleColumns = (columns: any[]): any[] => {
+        return columns
+          .map(column => {
+            // 如果有子列，递归处理
+            if (column.children?.length > 0) {
+              const filteredChildren = filterVisibleColumns(column.children);
+              // 如果子列都为空，则不显示该列
+              if (filteredChildren.length === 0 && column.visible === false) {
+                return null;
+              }
+              return {
+                ...column,
+                children: filteredChildren
+              };
+            }
+            // 如果没有子列，检查 visible 属性
+            return column.visible !== false ? column : null;
+          })
+          .filter(Boolean) as any[]; // 过滤掉 null 值
+      };
+      
+      return filterVisibleColumns(cols);
     }
 
     const newColumns: any[] = [];

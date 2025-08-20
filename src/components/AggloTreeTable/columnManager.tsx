@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useImmer } from 'use-immer';
 import { SettingOutlined, HolderOutlined } from '@ant-design/icons';
 import type { TableTheme } from '../VirtualTable/themes';
 import {
@@ -21,12 +22,8 @@ import { CSS } from '@dnd-kit/utilities';
 export interface ColumnManagerProps {
   /** Table columns */
   columns: any[];
-  /** Visible columns */
-  visibleColumns: string[];
-  /** Callback when column visibility changes */
-  onColumnVisibilityChange: (visibleColumns: string[]) => void;
-  /** Callback when column order changes */
-  onColumnOrderChange?: (columnOrder: string[]) => void;
+  /** Callback when column configuration changes */
+  onColumnChange: (columns: any[]) => void;
   /** Table theme */
   theme?: TableTheme;
   /** Position of the column manager */
@@ -51,30 +48,13 @@ const extractAllColumns = (cols: any[]) => {
 
 const ColumnManager: React.FC<ColumnManagerProps> = ({
   columns,
-  visibleColumns,
-  onColumnVisibilityChange,
-  onColumnOrderChange,
+  onColumnChange,
   theme,
   position = 'right',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [columnOrder, setColumnOrder] = useState<string[]>([]);
   const columnManagerRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLDivElement>(null);
-
-  // 初始化列顺序
-  useEffect(() => {
-    const allCols = extractAllColumns(columns);
-    setColumnOrder(allCols.map(col => col.dataIndex));
-  }, [columns]);
-
-  // 获取排序后的列
-  const getOrderedColumns = () => {
-    const allCols = extractAllColumns(columns);
-    return columnOrder
-      .map(dataIndex => allCols.find(col => col.dataIndex === dataIndex))
-      .filter(Boolean) as any[];
-  };
 
   // 点击外部关闭列管理器
   useEffect(() => {
@@ -108,52 +88,105 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     })
   );
 
+  // 获取所有叶子节点列
+  const leafColumns = extractAllColumns(columns);
+  
+  // 处理拖拽结束事件
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
 
     if (active.id !== over.id) {
-      setColumnOrder((items) => {
-        const oldIndex = items.indexOf(active.id);
-        const newIndex = items.indexOf(over.id);
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        // 通知父组件列顺序已更改
-        onColumnOrderChange?.(newItems);
-        return newItems;
-      });
+      // 创建列的深拷贝以避免直接修改原始数据
+      const newColumns = [...columns];
+      
+      // 获取所有叶子节点列及其在数组中的路径
+      const getAllLeafColumnsWithPaths = (cols: any[], parentPath: number[] = []): Array<{column: any, path: number[]}> => {
+        let result: Array<{column: any, path: number[]}> = [];
+        cols.forEach((col, index) => {
+          const currentPath = [...parentPath, index];
+          if (col.children?.length > 0) {
+            result = result.concat(getAllLeafColumnsWithPaths(col.children, currentPath));
+          } else {
+            result.push({ column: col, path: currentPath });
+          }
+        });
+        return result;
+      };
+      
+      const leafColumnsWithPaths = getAllLeafColumnsWithPaths(newColumns);
+      
+      // 找到要交换的两列的路径
+      const activeColumnPath = leafColumnsWithPaths.find(item => item.column.dataIndex === active.id)?.path;
+      const overColumnPath = leafColumnsWithPaths.find(item => item.column.dataIndex === over.id)?.path;
+      
+      if (activeColumnPath && overColumnPath) {
+        // 根据路径找到列在嵌套结构中的位置并交换它们
+        const moveColumn = (cols: any[], fromPath: number[], toPath: number[]) => {
+          // 获取源列
+          let sourceContainer = cols;
+          for (let i = 0; i < fromPath.length - 1; i++) {
+            sourceContainer = sourceContainer[fromPath[i]].children;
+          }
+          const sourceColumn = sourceContainer[fromPath[fromPath.length - 1]];
+          
+          // 获取目标列
+          let targetContainer = cols;
+          for (let i = 0; i < toPath.length - 1; i++) {
+            targetContainer = targetContainer[toPath[i]].children;
+          }
+          const targetColumn = targetContainer[toPath[toPath.length - 1]];
+          
+          // 交换列
+          sourceContainer[fromPath[fromPath.length - 1]] = targetColumn;
+          targetContainer[toPath[toPath.length - 1]] = sourceColumn;
+        };
+        
+        moveColumn(newColumns, activeColumnPath, overColumnPath);
+        onColumnChange(newColumns);
+      }
     }
   };
 
   // 切换列可见性
   const toggleColumnVisibility = (dataIndex: string) => {
-    const newVisibleColumns = visibleColumns.includes(dataIndex)
-      ? visibleColumns.filter((key) => key !== dataIndex)
-      : [...visibleColumns, dataIndex];
-    onColumnVisibilityChange(newVisibleColumns);
+    // 创建列的深拷贝以避免直接修改原始数据
+    const newColumns = [...columns];
+    
+    // 递归查找并更新列的可见性
+    const updateColumnVisibility = (cols: any[]) => {
+      cols.forEach(col => {
+        if (col.children?.length > 0) {
+          updateColumnVisibility(col.children);
+        } else if (col.dataIndex === dataIndex) {
+          // 切换 visible 属性
+          col.visible = !col.visible;
+        }
+      });
+    };
+    
+    updateColumnVisibility(newColumns);
+    onColumnChange(newColumns);
   };
 
   // 切换所有列可见性
   const toggleAllColumns = (isVisible: boolean) => {
-    if (isVisible) {
-      // 显示所有列
-      const allColumnKeys: string[] = [];
-      const extractColumnKeys = (cols: any[]) => {
-        cols.forEach(col => {
-          if (col.children?.length > 0) {
-            extractColumnKeys(col.children);
-          } else if (col.dataIndex) {
-            allColumnKeys.push(col.dataIndex);
-          }
-        });
-      };
-      extractColumnKeys(columns);
-      onColumnVisibilityChange(allColumnKeys);
-    } else {
-      // 隐藏所有列（完全清空）
-      onColumnVisibilityChange([]);
-    }
+    // 创建列的深拷贝以避免直接修改原始数据
+    const newColumns = [...columns];
+    
+    // 递归更新所有列的可见性
+    const updateAllColumnsVisibility = (cols: any[]) => {
+      cols.forEach(col => {
+        if (col.children?.length > 0) {
+          updateAllColumnsVisibility(col.children);
+        } else {
+          col.visible = isVisible;
+        }
+      });
+    };
+    
+    updateAllColumnsVisibility(newColumns);
+    onColumnChange(newColumns);
   };
-
-  const allColumns = extractAllColumns(columns);
 
   return (
     <div 
@@ -250,12 +283,14 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             }}
             onClick={(e) => {
               e.stopPropagation();
-              toggleAllColumns(visibleColumns.length !== allColumns.length);
+              // 检查是否所有列都可见
+              const allVisible = leafColumns.every(col => col.visible !== false);
+              toggleAllColumns(!allVisible);
             }}
           >
             <input
               type="checkbox"
-              checked={visibleColumns.length === allColumns.length}
+              checked={leafColumns.every(col => col.visible !== false)}
               onChange={(e) => {
                 e.stopPropagation();
                 toggleAllColumns(e.target.checked);
@@ -274,7 +309,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={columnOrder}
+              items={leafColumns.map(col => col.dataIndex)}
               strategy={verticalListSortingStrategy}
             >
               <div style={{ 
@@ -282,14 +317,13 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
                 overflowY: 'auto',
                 padding: '4px 0'
               }}>
-                {getOrderedColumns().map((column, index) => (
+                {leafColumns.map((column, index) => (
                   <SortableColumnItem
                     key={column.dataIndex}
                     column={column}
                     index={index}
-                    allColumns={getOrderedColumns()}
+                    allColumns={leafColumns}
                     theme={theme}
-                    visibleColumns={visibleColumns}
                     toggleColumnVisibility={toggleColumnVisibility}
                   />
                 ))}
@@ -307,14 +341,12 @@ const SortableColumnItem = ({
   index, 
   allColumns, 
   theme, 
-  visibleColumns, 
   toggleColumnVisibility 
 }: {
   column: any;
   index: number;
   allColumns: any[];
   theme?: TableTheme;
-  visibleColumns: string[];
   toggleColumnVisibility: (dataIndex: string) => void;
 }) => {
   const {
@@ -376,7 +408,7 @@ const SortableColumnItem = ({
       </div>
       <input
         type="checkbox"
-        checked={visibleColumns.includes(column.dataIndex)}
+        checked={column.visible !== false}
         onChange={(e) => {
           e.stopPropagation();
           toggleColumnVisibility(column.dataIndex);

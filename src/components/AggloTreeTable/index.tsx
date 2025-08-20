@@ -41,9 +41,6 @@ export interface AggloTreeTableProps extends VirtualTableProps {
   /** Sort function for tree nodes */
   /** 树节点排序函数 */
   sort?: (a: any, b: any) => number;
-  /** Columns to display in the table */
-  /** 表格中要显示的列 */
-  displayColumns?: string[];
   /** Whether to show column management component */
   /** 是否显示列管理组件 */
   showColumnManagement?: boolean;
@@ -95,11 +92,10 @@ export interface AggloTreeTableHandles {
 const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTableProps>((props, ref) => {
   const {
     groupKeys = [],
-    columns,
+    columns = [],
     dataSource,
     rowKey,
     AggregateKeys,
-    displayColumns,
     loading,
     expandable,
     sort,
@@ -112,25 +108,8 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
   const expandDataIndex = expandable?.expandDataIndex ?? 'expand';
   
   const [newDataSource, setNewDataSource] = useState<any[]>([]);
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
-    if (displayColumns) return displayColumns;
-    if (!columns) return [];
-    // 如果没有提供 displayColumns 且 columns 存在，则默认显示所有列
-    return columns
-      .filter(col => !col.children)
-      .map(col => col.dataIndex)
-      .filter(Boolean) as string[];
-  });
-
+  const [processedColumns, setProcessedColumns] = useState<any[]>(columns);
   const [expandRowByClick, setExpandRowByClick] = useState(false);
-  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
-    if (!columns) return [];
-    // 初始化列顺序
-    return columns
-      .filter(col => !col.children)
-      .map(col => col.dataIndex)
-      .filter(Boolean) as string[];
-  });
   const virtualTableRef = useRef<VirtualTableHandles>(null);
 
   useEffect(() => {
@@ -157,68 +136,8 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     collapseAll: () => virtualTableRef.current?.collapseAll(),
   }));
 
-  const handleColumnVisibilityChange = (newVisibleColumns: string[]) => {
-    setVisibleColumns(newVisibleColumns);
-  };
-
-  const handleColumnOrderChange = (newColumnOrder: string[]) => {
-    setColumnOrder(newColumnOrder);
-  };
-
   // 处理主题配置
   const tableTheme: TableTheme | undefined = typeof theme === 'string' ? undefined : theme;
-
-  // 根据列顺序重新排列列
-  const reorderColumns = (cols: any[], order: string[]): any[] => {
-    if (!order || order.length === 0) return cols;
-    
-    // 创建一个映射来快速查找列的索引
-    const orderMap = new Map(order.map((dataIndex, index) => [dataIndex, index]));
-    
-    // 递归处理列和子列
-    const reorder = (columns: any[]): any[] => {
-      // 先处理子列
-      const processedColumns = columns.map(col => {
-        if (col.children) {
-          return {
-            ...col,
-            children: reorder(col.children)
-          };
-        }
-        return col;
-      });
-      
-      // 然后根据order排序
-      return processedColumns.sort((a, b) => {
-        // 如果是父列（有子列），我们基于第一个叶子子列来排序
-        if (a.children) {
-          // 找到第一个叶子子列
-          let firstLeafA = a.children[0];
-          while (firstLeafA && firstLeafA.children) {
-            firstLeafA = firstLeafA.children[0];
-          }
-          
-          let firstLeafB = b.children[0];
-          while (firstLeafB && firstLeafB.children) {
-            firstLeafB = firstLeafB.children[0];
-          }
-          
-          const indexA = firstLeafA?.dataIndex ? orderMap.get(firstLeafA.dataIndex) : Infinity;
-          const indexB = firstLeafB?.dataIndex ? orderMap.get(firstLeafB.dataIndex) : Infinity;
-          
-          return (indexA ?? Infinity) - (indexB ?? Infinity);
-        }
-        
-        // 如果是叶子列（没有子列），根据order排序
-        const indexA = a.dataIndex ? orderMap.get(a.dataIndex) : Infinity;
-        const indexB = b.dataIndex ? orderMap.get(b.dataIndex) : Infinity;
-        
-        return (indexA ?? Infinity) - (indexB ?? Infinity);
-      });
-    };
-    
-    return reorder(cols);
-  };
 
   // ColumnManager 的宽度计算 (按钮宽度 24px + 左右边框各 1px)
   const columnManagerWidth = 26;
@@ -255,10 +174,8 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
           zIndex: 5
         }}>
           <ColumnManager
-            columns={columns}
-            visibleColumns={visibleColumns}
-            onColumnVisibilityChange={handleColumnVisibilityChange}
-            onColumnOrderChange={handleColumnOrderChange}
+            columns={processedColumns}
+            onColumnChange={setProcessedColumns}
             theme={tableTheme}
             position={columnManagerPosition}
           />
@@ -268,9 +185,8 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
         <VirtualTable
           ref={virtualTableRef}
           {...props}
-          displayColumns={displayColumns || visibleColumns}
           loading={loading}
-          columns={columns ? reorderColumns(columns, columnOrder) : columns}
+          columns={processedColumns}
           dataSource={newDataSource}
           rowKey={rowKey}
           expandable={{
