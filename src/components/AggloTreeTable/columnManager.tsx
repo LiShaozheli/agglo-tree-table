@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useImmer } from 'use-immer';
 import { SettingOutlined, HolderOutlined } from '@ant-design/icons';
 import type { TableTheme } from '../VirtualTable/themes';
 import {
@@ -30,6 +29,22 @@ export interface ColumnManagerProps {
   position?: 'left' | 'right';
 }
 
+/**
+ * 列信息类型定义
+ */
+export type ColumnInfo = {
+  /** 列标题 */
+  title: string;
+  /** 列数据字段 */
+  dataIndex: string;
+  /** 列是否可见 */
+  visible?: boolean;
+  /** 子列 */
+  children?: ColumnInfo[];
+  /** 其他属性 */
+  [key: string]: any;
+};
+
 // 获取所有列（包括嵌套子列）
 const extractAllColumns = (cols: any[]) => {
   const allColumns: any[] = [];
@@ -46,6 +61,66 @@ const extractAllColumns = (cols: any[]) => {
   return allColumns;
 };
 
+// 扁平化列结构，用于树状显示
+const flattenColumns = (columns: any[], depth = 0, parentPath: string[] = []): any[] => {
+  let result: any[] = [];
+  columns.forEach((column, index) => {
+    const path = [...parentPath, String(index)].join('-');
+    result.push({
+      ...column,
+      depth,
+      path,
+      originalIndex: index,
+    });
+    
+    if (column.children?.length > 0) {
+      result = result.concat(flattenColumns(column.children, depth + 1, [...parentPath, String(index)]));
+    }
+  });
+  return result;
+};
+
+// 从扁平化结构重建嵌套结构
+const rebuildNestedColumnsFromFlattened = (flattenedColumns: any[], originalColumns: any[]): any[] => {
+  // 创建一个映射来存储所有列的副本
+  const columnMap: Record<string, any> = {};
+  
+  // 创建所有列的副本
+  flattenedColumns.forEach(col => {
+    columnMap[col.path] = { ...col };
+  });
+  
+  // 清除所有列的children属性，准备重新构建
+  Object.values(columnMap).forEach(col => {
+    delete col.children;
+  });
+  
+  // 重新构建嵌套结构
+  const rootColumns: any[] = [];
+  
+  flattenedColumns.forEach(col => {
+    const pathParts = col.path.split('-');
+    
+    if (pathParts.length === 1) {
+      // 根级别的列
+      rootColumns.push(columnMap[col.path]);
+    } else {
+      // 子级别的列
+      const parentPath = pathParts.slice(0, -1).join('-');
+      const parentColumn = columnMap[parentPath];
+      
+      if (parentColumn) {
+        if (!parentColumn.children) {
+          parentColumn.children = [];
+        }
+        parentColumn.children.push(columnMap[col.path]);
+      }
+    }
+  });
+  
+  return rootColumns;
+};
+
 const ColumnManager: React.FC<ColumnManagerProps> = ({
   columns,
   onColumnChange,
@@ -53,6 +128,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   position = 'right',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const columnManagerRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLDivElement>(null);
 
@@ -91,57 +167,44 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   // 获取所有叶子节点列
   const leafColumns = extractAllColumns(columns);
   
+  // 扁平化的列用于树状显示
+  const flattenedColumns = flattenColumns(columns);
+  
+  // 处理拖拽开始事件
+  const handleDragStart = (event: any) => {
+    const { active } = event;
+    setActiveId(active.id);
+  };
+
+  // 处理列重新排序（支持改变父子级关系）
+  const handleDragOver = (event: any) => {
+    const { active, over } = event;
+    
+    if (!over) return;
+    
+    // 这里可以实现更复杂的拖拽逻辑，例如改变父子级关系
+    // 当前实现保持原有的列交换逻辑
+  };
+
   // 处理拖拽结束事件
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
+    setActiveId(null);
 
-    if (active.id !== over.id) {
-      // 创建列的深拷贝以避免直接修改原始数据
-      const newColumns = [...columns];
+    // 添加检查确保 over 对象存在
+    if (over && active.id !== over.id) {
+      // 重新排列列的顺序
+      const activeIndex = flattenedColumns.findIndex(col => col.path === active.id);
+      const overIndex = flattenedColumns.findIndex(col => col.path === over.id);
       
-      // 获取所有叶子节点列及其在数组中的路径
-      const getAllLeafColumnsWithPaths = (cols: any[], parentPath: number[] = []): Array<{column: any, path: number[]}> => {
-        let result: Array<{column: any, path: number[]}> = [];
-        cols.forEach((col, index) => {
-          const currentPath = [...parentPath, index];
-          if (col.children?.length > 0) {
-            result = result.concat(getAllLeafColumnsWithPaths(col.children, currentPath));
-          } else {
-            result.push({ column: col, path: currentPath });
-          }
-        });
-        return result;
-      };
-      
-      const leafColumnsWithPaths = getAllLeafColumnsWithPaths(newColumns);
-      
-      // 找到要交换的两列的路径
-      const activeColumnPath = leafColumnsWithPaths.find(item => item.column.dataIndex === active.id)?.path;
-      const overColumnPath = leafColumnsWithPaths.find(item => item.column.dataIndex === over.id)?.path;
-      
-      if (activeColumnPath && overColumnPath) {
-        // 根据路径找到列在嵌套结构中的位置并交换它们
-        const moveColumn = (cols: any[], fromPath: number[], toPath: number[]) => {
-          // 获取源列
-          let sourceContainer = cols;
-          for (let i = 0; i < fromPath.length - 1; i++) {
-            sourceContainer = sourceContainer[fromPath[i]].children;
-          }
-          const sourceColumn = sourceContainer[fromPath[fromPath.length - 1]];
-          
-          // 获取目标列
-          let targetContainer = cols;
-          for (let i = 0; i < toPath.length - 1; i++) {
-            targetContainer = targetContainer[toPath[i]].children;
-          }
-          const targetColumn = targetContainer[toPath[toPath.length - 1]];
-          
-          // 交换列
-          sourceContainer[fromPath[fromPath.length - 1]] = targetColumn;
-          targetContainer[toPath[toPath.length - 1]] = sourceColumn;
-        };
+      if (activeIndex !== -1 && overIndex !== -1) {
+        // 重新排序扁平化的列
+        const newFlattenedColumns = [...flattenedColumns];
+        const [movedItem] = newFlattenedColumns.splice(activeIndex, 1);
+        newFlattenedColumns.splice(overIndex, 0, movedItem);
         
-        moveColumn(newColumns, activeColumnPath, overColumnPath);
+        // 重建嵌套结构
+        const newColumns = rebuildNestedColumnsFromFlattened(newFlattenedColumns, columns);
         onColumnChange(newColumns);
       }
     }
@@ -150,16 +213,21 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   // 切换列可见性
   const toggleColumnVisibility = (dataIndex: string) => {
     // 创建列的深拷贝以避免直接修改原始数据
-    const newColumns = [...columns];
+    const newColumns = JSON.parse(JSON.stringify(columns));
     
     // 递归查找并更新列的可见性
     const updateColumnVisibility = (cols: any[]) => {
       cols.forEach(col => {
         if (col.children?.length > 0) {
           updateColumnVisibility(col.children);
-        } else if (col.dataIndex === dataIndex) {
-          // 切换 visible 属性
-          col.visible = !col.visible;
+        }
+        // 无论是否有子列，只要 dataIndex 匹配就切换可见性
+        if (col.dataIndex === dataIndex) {
+          // 正确切换 visible 属性
+          // 如果 visible 属性为 undefined，默认是可见的 (true)
+          // 如果 visible 属性为 true，切换为 false (隐藏)
+          // 如果 visible 属性为 false，切换为 true (显示)
+          col.visible = !(col.visible !== false);
         }
       });
     };
@@ -168,10 +236,53 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     onColumnChange(newColumns);
   };
 
+  // 切换父级列及其所有子列的可见性
+  const toggleParentColumnVisibility = (columnPath: string) => {
+    // 创建列的深拷贝以避免直接修改原始数据
+    const newColumns = JSON.parse(JSON.stringify(columns));
+    
+    // 根据路径找到对应的列
+    const pathParts = columnPath.split('-').map(Number);
+    let targetColumn: any = newColumns[pathParts[0]];
+    
+    for (let i = 1; i < pathParts.length; i++) {
+      if (targetColumn && targetColumn.children) {
+        targetColumn = targetColumn.children[pathParts[i]];
+      } else {
+        targetColumn = null;
+        break;
+      }
+    }
+    
+    if (targetColumn) {
+      // 计算新的可见性状态
+      const newVisibleState = !(targetColumn.visible !== false);
+      
+      // 设置目标列的新可见性状态
+      targetColumn.visible = newVisibleState;
+      
+      // 如果有子列，也一并设置它们的可见性状态
+      const updateChildrenVisibility = (cols: any[]) => {
+        cols.forEach(col => {
+          col.visible = newVisibleState;
+          if (col.children?.length > 0) {
+            updateChildrenVisibility(col.children);
+          }
+        });
+      };
+      
+      if (targetColumn.children?.length > 0) {
+        updateChildrenVisibility(targetColumn.children);
+      }
+      
+      onColumnChange(newColumns);
+    }
+  };
+
   // 切换所有列可见性
   const toggleAllColumns = (isVisible: boolean) => {
     // 创建列的深拷贝以避免直接修改原始数据
-    const newColumns = [...columns];
+    const newColumns = JSON.parse(JSON.stringify(columns));
     
     // 递归更新所有列的可见性
     const updateAllColumnsVisibility = (cols: any[]) => {
@@ -260,7 +371,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             borderTop: 'none',
             borderBottom: 'none',
             zIndex: 5,  // 降低 z-index 值，避免遮挡 dumi 菜单栏
-            width: '200px',
+            width: '250px', // 增加宽度以适应树状结构
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
@@ -302,14 +413,16 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             <span>全选/取消全选</span>
           </div>
           
-          {/* 列列表 */}
+          {/* 列列表 - 树状结构 */}
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={leafColumns.map(col => col.dataIndex)}
+              items={flattenedColumns.map(col => col.path)}
               strategy={verticalListSortingStrategy}
             >
               <div style={{ 
@@ -317,14 +430,13 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
                 overflowY: 'auto',
                 padding: '4px 0'
               }}>
-                {leafColumns.map((column, index) => (
-                  <SortableColumnItem
-                    key={column.dataIndex}
+                {flattenedColumns.map((column) => (
+                  <SortableTreeItem
+                    key={column.path}
                     column={column}
-                    index={index}
-                    allColumns={leafColumns}
                     theme={theme}
                     toggleColumnVisibility={toggleColumnVisibility}
+                    toggleParentColumnVisibility={toggleParentColumnVisibility}
                   />
                 ))}
               </div>
@@ -336,18 +448,17 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   );
 };
 
-const SortableColumnItem = ({ 
-  column, 
-  index, 
-  allColumns, 
-  theme, 
-  toggleColumnVisibility 
+// 树状结构的可排序项组件
+const SortableTreeItem = ({ 
+  column,
+  theme,
+  toggleColumnVisibility,
+  toggleParentColumnVisibility
 }: {
   column: any;
-  index: number;
-  allColumns: any[];
   theme?: TableTheme;
   toggleColumnVisibility: (dataIndex: string) => void;
+  toggleParentColumnVisibility: (columnPath: string) => void;
 }) => {
   const {
     attributes,
@@ -356,24 +467,21 @@ const SortableColumnItem = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: column.dataIndex });
+  } = useSortable({ id: column.path });
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
     padding: '6px 12px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     fontSize: '13px',
     color: theme?.bodyTextColor || '#000000',
-    borderBottom: theme?.showRowBorders && index < allColumns.length - 1 ? 
-      `1px solid ${theme?.rowBorderColor || theme?.borderColor || '#d9d9d9'}` : 
-      undefined,
     backgroundColor: isDragging ? (theme?.rowHoverBgColor || '#f5f5f5') : 'transparent',
     zIndex: isDragging ? 1 : 'auto',
     position: 'relative' as const,
     opacity: isDragging ? 0.5 : 1,
+    paddingLeft: `${12 + column.depth * 20}px`, // 根据深度增加左边距以显示层级关系
   };
 
   return (
@@ -406,12 +514,24 @@ const SortableColumnItem = ({
       >
         <HolderOutlined style={{ color: theme?.bodyTextColor || '#666' }} />
       </div>
+      {column.children?.length > 0 ? (
+        // 父级列显示文件夹图标
+        <span style={{ marginRight: '8px' }}>📁</span>
+      ) : (
+        // 叶子列显示文件图标
+        <span style={{ marginRight: '8px' }}>📄</span>
+      )}
       <input
         type="checkbox"
         checked={column.visible !== false}
         onChange={(e) => {
           e.stopPropagation();
-          toggleColumnVisibility(column.dataIndex);
+          if (column.dataIndex) {
+            toggleColumnVisibility(column.dataIndex);
+          } else {
+            // 对于没有 dataIndex 的父级列，切换整个分支的可见性
+            toggleParentColumnVisibility(column.path);
+          }
         }}
         style={{
           marginRight: '8px',
@@ -420,7 +540,12 @@ const SortableColumnItem = ({
       <span 
         onClick={(e) => {
           e.stopPropagation();
-          toggleColumnVisibility(column.dataIndex);
+          if (column.dataIndex) {
+            toggleColumnVisibility(column.dataIndex);
+          } else {
+            // 对于没有 dataIndex 的父级列，切换整个分支的可见性
+            toggleParentColumnVisibility(column.path);
+          }
         }}
       >
         {column.title}

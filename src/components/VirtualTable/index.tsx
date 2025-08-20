@@ -72,9 +72,6 @@ export interface VirtualTableProps {
   /** Row event handler */
   /** 行事件处理器 */
   onRow?: (record: any, index: any) => Record<string, any>;
-  /** Columns to display (show only these) */
-  /** 要显示的列（仅显示这些列） */
-  displayColumns?: string[];
   /** Loading state */
   /** 加载状态 */
   loading?: boolean;
@@ -127,7 +124,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     rowHeight = 40,
     headerRowHeight = 40,
     onRow,
-    displayColumns,
     loading = false,
     expandable: {
       indentSize = 15,
@@ -285,48 +281,30 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   }), [expandColumnWidth, expandedRowKeys, showExpandAll, expandColumnTitle, expandDataIndex, tableTheme.primaryColor, indentSize, expandIcon, rowKey, expandRowByClick]);
 
   // 修改 getColumns 函数，支持列的 visible 属性
-  const getColumns = (cols: any[], displayCols?: string[]): any[] => {
-    // 如果没有指定 displayColumns，则显示所有 visible 不为 false 的列
-    if (!displayCols) {
-      const filterVisibleColumns = (columns: any[]): any[] => {
-        return columns
-          .map(column => {
-            // 如果有子列，递归处理
-            if (column.children?.length > 0) {
-              const filteredChildren = filterVisibleColumns(column.children);
-              // 如果子列都为空，则不显示该列
-              if (filteredChildren.length === 0 && column.visible === false) {
-                return null;
-              }
+  const getColumns = (cols: any[]): any[] => {
+    const filterVisibleColumns = (columns: any[]): any[] => {
+      return columns
+        .map(column => {
+          // 如果有子列，递归处理
+          if (column.children?.length > 0) {
+            const filteredChildren = filterVisibleColumns(column.children);
+            // 如果子列中有可见的，则保留该列并使用过滤后的子列
+            if (filteredChildren.length > 0) {
               return {
                 ...column,
                 children: filteredChildren
               };
             }
-            // 如果没有子列，检查 visible 属性
+            // 如果没有可见的子列，则根据当前列自身的 visible 属性决定是否显示
             return column.visible !== false ? column : null;
-          })
-          .filter(Boolean) as any[]; // 过滤掉 null 值
-      };
-      
-      return filterVisibleColumns(cols);
-    }
+          }
+          // 如果没有子列，检查 visible 属性
+          return column.visible !== false ? column : null;
+        })
+        .filter(Boolean) as any[]; // 过滤掉 null 值
+    };
 
-    const newColumns: any[] = [];
-    cols.forEach(column => {
-      if (column.children?.length > 0) {
-        const children = getColumns(column.children, displayCols);
-        if (children.length > 0) {
-          newColumns.push({
-            ...column,
-            children,
-          });
-        }
-      } else if (displayCols.includes(column.dataIndex)) {
-        newColumns.push(column);
-      }
-    });
-    return newColumns;
+    return filterVisibleColumns(cols);
   };
 
   /**
@@ -424,12 +402,14 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   };
 
   useEffect(() => {
-    const filteredColumns = getColumns(columns, displayColumns);
+    const filteredColumns = getColumns(columns);
     // 只有当启用expandRowByClick时才添加expandColum
     const expandedColumns = expandRowByClick ? [expandColum, ...filteredColumns] : filteredColumns;
     const processedColumns = processColumnsWithWidth(expandedColumns);
+    console.log('processedColumns', processedColumns);
+
     setOriginalColumns(processedColumns);
-  }, [columns, displayColumns, expandRowByClick, expandColum, tableWidth]);
+  }, [columns, expandRowByClick, expandColum, tableWidth]);
 
   return (
     <ResizeObserver

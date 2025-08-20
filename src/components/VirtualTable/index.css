@@ -78,6 +78,7 @@
   white-space: nowrap;
   min-width: 0;
   padding: 8px 12px;
+  box-sizing: border-box;
 }
 
 .agglo-tree-table-cell-inner-center {
@@ -99,6 +100,7 @@
   white-space: nowrap;
   min-width: 0;
   padding: 0px 12px;
+  box-sizing: border-box;
   align-items: center;
 }
 
@@ -141,9 +143,10 @@
   width: 5px;
   cursor: col-resize;
   background-color: transparent;
-  z-index: 1;
+  z-index: 10;
 }
 
 .virtual-table-column-resizer:hover {
   background-color: #1890ff;
+  z-index: 10;
 }

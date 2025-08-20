@@ -163,53 +163,86 @@ const TableHeader: FC<TableHeaderProps> = props => {
         }}
         key={`header-layer-${layer}-${number}`}
       >
-        {oldColumns.map((column: any, index: number) => (
-          <div
-            key={column.key || column.dataIndex || index}
-            style={{
-              // 为非最后一个子元素添加右边框，避免重复边框线
-              borderRight: index < oldColumns.length - 1 ? getHeaderColumnBorderStyle() : 'none',
-              position: 'relative',
-              width: column.width,
-            }}
-            data-dataindex={column.dataIndex}
-          >
-            <div className={`agglo-tree-table-header-cell-inner ${
-              column.align === 'right' ? 'agglo-tree-table-header-cell-inner-right' : 
-              column.align === 'left' ? 'agglo-tree-table-header-cell-inner-left' : 
-              'agglo-tree-table-header-cell-inner-center'
-            }`}
-            style={{
-              height:
-                column.children?.length > 0
-                  ? headerRowHeight
-                  : (headerLayer - layer + 1) * headerRowHeight,
-              lineHeight: column.children?.length > 0
-                ? headerRowHeight + 'px'
-                : (headerLayer - layer + 1) * headerRowHeight + 'px',
-              ...(column.headerStyle || {}), // 将用户自定义样式移到内层
-            }}>
-              {column.title}
-            </div>
-            {/* 列宽调整手柄 - 仅在启用时渲染 */}
-            {resizable && (!column.children || column.children?.length === 0) && (
+        {oldColumns.map((column: any, index: number) => {
+          const borderWidth = getHeaderRowBorderStyle() === 'none' ? 0 : 1;
+          // 计算子列总宽度（包含border）
+          const calculateChildrenWidth = (col: any): number => {
+            if (!col.children || col.children.length === 0) {
+              return col.width + borderWidth || 0;
+            }
+            // 递归计算子列宽度
+            const childrenWidth = col.children.reduce((sum: number, child: any) => sum + calculateChildrenWidth(child), 0);
+            return childrenWidth;
+          };
+
+          // 对有子列和无子列的表头进行彻底区分渲染
+          if (column.children?.length > 0) {
+            // 有子列的表头
+            const computedWidth = calculateChildrenWidth(column) - borderWidth;
+
+            return (
               <div
-                onMouseDown={(e) => handleResizeStart(column.dataIndex, e)}
-                className="virtual-table-column-resizer"
+                key={column.key || column.dataIndex || index}
                 style={{
-                  backgroundColor: 'transparent',
+                  width: computedWidth,
+                  borderRight: index < oldColumns.length - 1 ? getHeaderColumnBorderStyle() : 'none',
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = theme.primaryColor || '#1890ff';
+                data-dataindex={column.dataIndex}
+              >
+                <div className="agglo-tree-table-header-cell-inner"
+                  style={{
+                    textAlign: column.align || 'center',
+                    height: headerRowHeight,
+                    lineHeight: headerRowHeight + 'px',
+                    ...(column.headerStyle || {}), // 将用户自定义样式移到内层
+                  }}>
+                  {column.title}
+                </div>
+                {/* 列宽调整手柄 - 有子列的表头不显示调整手柄 */}
+                {column.children?.length > 0 && renderHeader(column.children, layer + 1, index)}
+              </div>
+            );
+          } else {
+            // 无子列的表头
+            return (
+              <div
+                key={column.key || column.dataIndex || index}
+                style={{
+                  width: column.width,
+                  borderRight: index < oldColumns.length - 1 ? getHeaderColumnBorderStyle() : 'none',
+                  position: 'relative',
                 }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              />
-            )}
-            {column.children?.length > 0 && renderHeader(column.children, layer + 1, index)}
-          </div>
-        ))}
+                data-dataindex={column.dataIndex}
+              >
+                <div className="agglo-tree-table-header-cell-inner"
+                  style={{
+                    textAlign: column.align || 'center',
+                    height: (headerLayer - layer + 1) * headerRowHeight,
+                    lineHeight: (headerLayer - layer + 1) * headerRowHeight + 'px',
+                    ...(column.headerStyle || {}), // 将用户自定义样式移到内层
+                  }}>
+                  {column.title}
+                </div>
+                {/* 列宽调整手柄 - 仅在启用时渲染 */}
+                {resizable && (
+                  <div
+                    onMouseDown={(e) => handleResizeStart(column.dataIndex, e)}
+                    className="virtual-table-column-resizer"
+                    style={{
+                      backgroundColor: 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = theme.primaryColor || '#1890ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  />
+                )}
+              </div>
+            );
+          }
+        })}
       </div>
     );
   };

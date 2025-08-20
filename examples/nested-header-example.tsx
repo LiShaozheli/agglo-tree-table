@@ -177,6 +177,7 @@ const NestedHeaderExample = () => {
           ],
         }}
         theme={theme}
+        showColumnManagement={true}
       />
     </div>
   );

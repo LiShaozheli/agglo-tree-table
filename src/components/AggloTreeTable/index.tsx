@@ -106,7 +106,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
   } = props;
 
   const expandDataIndex = expandable?.expandDataIndex ?? 'expand';
-  
+
   const [newDataSource, setNewDataSource] = useState<any[]>([]);
   const [processedColumns, setProcessedColumns] = useState<any[]>(columns);
   const [expandRowByClick, setExpandRowByClick] = useState(false);
@@ -141,22 +141,22 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
 
   // ColumnManager 的宽度计算 (按钮宽度 24px + 左右边框各 1px)
   const columnManagerWidth = 26;
-  
+
   // 计算 VirtualTable 容器的样式
-  const virtualTableContainerStyle = showColumnManagement && columns 
-    ? { 
-        width: `calc(${typeof width === 'number' ? `${width}px` : width} - ${columnManagerWidth}px)`,
-        height: '100%',
-        marginLeft: columnManagerPosition === 'left' ? `${columnManagerWidth}px` : '0',
-        marginRight: columnManagerPosition === 'right' ? `${columnManagerWidth}px` : '0'
-      }
-    : { 
-        width: width,
-        height: '100%'
-      };
+  const virtualTableContainerStyle = showColumnManagement && columns
+    ? {
+      width: `calc(${typeof width === 'number' ? `${width}px` : width} - ${columnManagerWidth}px)`,
+      height: '100%',
+      marginLeft: columnManagerPosition === 'left' ? `${columnManagerWidth}px` : '0',
+      marginRight: columnManagerPosition === 'right' ? `${columnManagerWidth}px` : '0'
+    }
+    : {
+      width: width,
+      height: '100%'
+    };
 
   return (
-    <div style={{ 
+    <div style={{
       position: 'relative',
       display: 'flex',
       height: '100%',
@@ -165,7 +165,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
       overflowY: 'visible',
     }}>
       {showColumnManagement && columns && (
-        <div style={{ 
+        <div style={{
           position: 'absolute',
           left: columnManagerPosition === 'left' ? 0 : undefined,
           right: columnManagerPosition === 'right' ? 0 : undefined,
