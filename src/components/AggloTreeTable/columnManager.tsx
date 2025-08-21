@@ -10,7 +10,6 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -44,6 +43,12 @@ export type ColumnInfo = {
   /** 其他属性 */
   [key: string]: any;
 };
+
+interface FlattenedColumn extends ColumnInfo {
+  depth: number;
+  path: string;
+  originalIndex: number;
+}
 
 // 获取所有列（包括嵌套子列）
 const extractAllColumns = (cols: any[]) => {
@@ -128,7 +133,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   position = 'right',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
   const columnManagerRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLDivElement>(null);
 
@@ -170,10 +175,38 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   // 扁平化的列用于树状显示
   const flattenedColumns = flattenColumns(columns);
   
+  // 初始化展开状态，默认全部展开
+  useEffect(() => {
+    const initialExpandedKeys: Record<string, boolean> = {};
+    flattenedColumns.forEach(col => {
+      if (col.children && col.children.length > 0) {
+        initialExpandedKeys[col.path] = true;
+      }
+    });
+    setExpandedKeys(initialExpandedKeys);
+  }, [columns]);
+
   // 处理拖拽开始事件
   const handleDragStart = (event: any) => {
     const { active } = event;
-    setActiveId(active.id);
+    
+    // 收起同级别的所有节点（具有相同深度的节点）
+    const collapsedKeys = { ...expandedKeys };
+    // 找到当前拖拽节点的路径
+    const activePath = active.id;
+    // 计算当前节点的深度
+    const activeDepth = (activePath.match(/-/g) || []).length;
+    
+    // 收起所有具有相同深度的节点
+    flattenedColumns.forEach(col => {
+      const colDepth = (col.path.match(/-/g) || []).length;
+      // 如果节点深度与当前拖拽节点相同，且有子节点，则收起它
+      if (colDepth === activeDepth && col.children && col.children.length > 0) {
+        collapsedKeys[col.path] = false;
+      }
+    });
+    
+    setExpandedKeys(collapsedKeys);
   };
 
   // 处理列重新排序（支持改变父子级关系）
@@ -189,13 +222,12 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   // 处理拖拽结束事件
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
-    setActiveId(null);
 
     // 添加检查确保 over 对象存在
     if (over && active.id !== over.id) {
       // 重新排列列的顺序
-      const activeIndex = flattenedColumns.findIndex(col => col.path === active.id);
-      const overIndex = flattenedColumns.findIndex(col => col.path === over.id);
+      const activeIndex = flattenedColumns.findIndex((col: any) => col.path === active.id);
+      const overIndex = flattenedColumns.findIndex((col: any) => col.path === over.id);
       
       if (activeIndex !== -1 && overIndex !== -1) {
         // 重新排序扁平化的列
@@ -208,6 +240,15 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
         onColumnChange(newColumns);
       }
     }
+    
+    // 恢复展开状态
+    const restoredKeys: Record<string, boolean> = {};
+    flattenedColumns.forEach(col => {
+      if (col.children && col.children.length > 0) {
+        restoredKeys[col.path] = true;
+      }
+    });
+    setExpandedKeys(restoredKeys);
   };
 
   // 切换列可见性
@@ -299,6 +340,14 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     onColumnChange(newColumns);
   };
 
+  // 切换展开状态
+  const toggleExpanded = (path: string) => {
+    setExpandedKeys(prev => ({
+      ...prev,
+      [path]: !prev[path]
+    }));
+  };
+
   return (
     <div 
       style={{ 
@@ -371,7 +420,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             borderTop: 'none',
             borderBottom: 'none',
             zIndex: 5,  // 降低 z-index 值，避免遮挡 dumi 菜单栏
-            width: '250px', // 增加宽度以适应树状结构
+            width: '200px',
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
@@ -437,6 +486,8 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
                     theme={theme}
                     toggleColumnVisibility={toggleColumnVisibility}
                     toggleParentColumnVisibility={toggleParentColumnVisibility}
+                    expandedKeys={expandedKeys}
+                    toggleExpanded={toggleExpanded}
                   />
                 ))}
               </div>
@@ -448,17 +499,22 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   );
 };
 
+
 // 树状结构的可排序项组件
 const SortableTreeItem = ({ 
   column,
   theme,
   toggleColumnVisibility,
-  toggleParentColumnVisibility
+  toggleParentColumnVisibility,
+  expandedKeys,
+  toggleExpanded
 }: {
-  column: any;
+  column: FlattenedColumn;
   theme?: TableTheme;
   toggleColumnVisibility: (dataIndex: string) => void;
   toggleParentColumnVisibility: (columnPath: string) => void;
+  expandedKeys: Record<string, boolean>;
+  toggleExpanded: (path: string) => void;
 }) => {
   const {
     attributes,
@@ -483,6 +539,23 @@ const SortableTreeItem = ({
     opacity: isDragging ? 0.5 : 1,
     paddingLeft: `${12 + column.depth * 20}px`, // 根据深度增加左边距以显示层级关系
   };
+
+  // 检查是否应该显示该列（父级都展开时才显示）
+  const isVisible = () => {
+    const pathParts = column.path.split('-');
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      const parentPath = pathParts.slice(0, i + 1).join('-');
+      if (expandedKeys[parentPath] === false) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // 如果不应该显示，则返回null
+  if (!isVisible()) {
+    return null;
+  }
 
   return (
     <div
@@ -514,9 +587,17 @@ const SortableTreeItem = ({
       >
         <HolderOutlined style={{ color: theme?.bodyTextColor || '#666' }} />
       </div>
-      {column.children?.length > 0 ? (
-        // 父级列显示文件夹图标
-        <span style={{ marginRight: '8px' }}>📁</span>
+      {column.children && column.children.length > 0 ? (
+        // 父级列显示展开/收起图标
+        <span 
+          style={{ marginRight: '8px', cursor: 'pointer' }} 
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleExpanded(column.path);
+          }}
+        >
+          {expandedKeys[column.path] ? '📂' : '📁'}
+        </span>
       ) : (
         // 叶子列显示文件图标
         <span style={{ marginRight: '8px' }}>📄</span>
