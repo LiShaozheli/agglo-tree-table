@@ -72,6 +72,9 @@ export interface VirtualTableProps {
   /** Height of header row */
   /** 表头行的高度 */
   headerRowHeight?: number;
+  /** Height of the table container */
+  /** 表格容器的高度 */
+  height?: number | string;
   /** Row event handler */
   /** 行事件处理器 */
   onRow?: (record: any, index: any) => Record<string, any>;
@@ -126,6 +129,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     dataSource = [],
     rowHeight = 40,
     headerRowHeight = 40,
+    height,
     onRow,
     loading = false,
     expandable: {
@@ -417,7 +421,13 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
         setTableWidth(width);
       }}
     >
-      <div className="virtual-table-container" ref={tableRef}>
+      <div
+        className="virtual-table-container"
+        ref={tableRef}
+        style={{
+          height,
+        }}
+      >
         <div className="virtual-table-min-width">
           <TableHeader
             columns={originalColumns}
@@ -427,6 +437,11 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
             onColumnWidthChange={handleColumnWidthChange}
             resizable={resizable}
             sticky={sticky} // 传递sticky属性
+            style={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 1,
+            }}
           />
           {loading ? (
             <div className="virtual-table-loading">Loading...</div>

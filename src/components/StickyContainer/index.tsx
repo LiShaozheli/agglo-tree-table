@@ -1,5 +1,5 @@
-import { calculateFixedElementsHeight } from 'agglo-tree-table/utils/domUtils';
-import React, { FC, ReactNode, useEffect, useRef, useState } from 'react';
+import { calculateFixedElementsHeight } from '../../utils/domUtils';
+import React, { CSSProperties, FC, ReactNode, useEffect, useRef, useState } from 'react';
 
 /**
  * 粘滞组件属性接口
@@ -32,6 +32,10 @@ export interface StickyContainerProps {
    * @default true
    */
   sticky?: boolean;
+  /**
+   * 额外样式 - 应用于最外层容器的自定义样式
+   */
+  style?: CSSProperties;
 }
 
 /**
@@ -47,7 +51,8 @@ const StickyContainer: FC<StickyContainerProps> = (props) => {
     boxShadow = '0 2px 8px rgba(0,0,0,0.15)',
     zIndex = 1000,
     children,
-    sticky = true
+    sticky = true,
+    style = {}
   } = props;
 
   const [isSticky, setIsSticky] = useState(false);
@@ -94,7 +99,7 @@ const StickyContainer: FC<StickyContainerProps> = (props) => {
   useEffect(() => {
     // 当sticky属性变化且为true时，重新计算固定元素高度
     if (sticky) {
-      setFixedElementsHeight(calculateFixedElementsHeight());
+      setFixedElementsHeight(calculateFixedElementsHeight(containerRef));
     }
 
     if (isSticky) {
@@ -156,7 +161,7 @@ const StickyContainer: FC<StickyContainerProps> = (props) => {
               overflow: 'hidden',
               boxShadow,
             }
-            : {}
+            : { ...style }
         }
       >
         <div

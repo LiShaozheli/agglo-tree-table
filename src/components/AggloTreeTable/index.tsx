@@ -50,6 +50,9 @@ export interface AggloTreeTableProps extends Omit<VirtualTableProps, 'columns'> 
   /** Width of the table container */
   /** 表格容器的宽度 */
   width?: number | string;
+  /** Height of the table container */
+  /** 表格容器的高度 */
+  height?: number | string;
   /** Whether to enable sticky header */
   /** 是否启用粘性表头 */
   sticky?: boolean;
@@ -102,6 +105,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     showColumnManagement = false,
     columnManagerPosition = 'right',
     width = '100%',
+    height,
     theme,
   } = props;
 
@@ -159,7 +163,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     <div style={{
       position: 'relative',
       display: 'flex',
-      height: '100%',
+      height: height,
       width: width,
       overflowX: 'hidden', // 防止在 AggloTreeTable 级别出现横向滚动条
       overflowY: 'visible',

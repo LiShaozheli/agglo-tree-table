@@ -4,13 +4,11 @@
 }
 
 .virtual-table-container {
-  overflow-x: auto;
-  overflow-y: visible;
-  z-index: 10;
+  overflow: auto;
 }
 
 .virtual-table-min-width {
-  min-width: max-content;
+  display: grid;
 }
 
 /* Table Header Styles */

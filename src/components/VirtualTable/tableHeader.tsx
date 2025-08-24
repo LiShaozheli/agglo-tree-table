@@ -30,6 +30,9 @@ export interface TableHeaderProps {
   /** Whether to enable sticky header */
   /** 是否启用粘性表头 */
   sticky?: boolean;
+  /** Additional styles */
+  /** 额外的样式 */
+  style?: React.CSSProperties;
 }
 
 /**
@@ -48,6 +51,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
     onColumnWidthChange,
     resizable = true, // 默认启用列宽调整功能
     sticky = true, // 默认启用粘性表头
+    style,
   } = props;
 
   const [headerLayer, setHeaderLayer] = useState(0);
@@ -249,7 +253,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
   };
 
   return (
-    <StickyContainer containerRef={containerRef} sticky={sticky}>  {/* 使用新的 StickyContainer 组件 */}
+    <StickyContainer containerRef={containerRef} sticky={sticky} style={style}>  {/* 使用新的 StickyContainer 组件 */}
       {renderHeader(columns)}
     </StickyContainer>
   );

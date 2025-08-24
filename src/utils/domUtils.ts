@@ -1,16 +1,18 @@
 /**
- * Calculate the total height of fixed elements at the top of the page
- * 计算页面顶部固定元素的总高度
+ * Calculate the height of the fixed element with the highest z-index at the top of the page
+ * 计算页面顶部具有最高 z-index 的固定元素的高度
  * 
  * This function identifies all elements with position: fixed or position: sticky 
- * that are positioned at the top of the page (top: 0) and calculates their total height.
+ * that are positioned at the top of the page (top: 0), finds the one with the highest z-index,
+ * and returns its height.
  * 该函数识别所有 position: fixed 或 position: sticky 且位于页面顶部 (top: 0) 的元素，
- * 并计算它们的总高度。
+ * 找到其中 z-index 值最大的元素，并返回其高度。
  * 
- * @returns The total height of fixed elements at the top of the page
- * @returns 页面顶部固定元素的总高度
+ * @param containerRef - Optional container reference to exclude internal elements
+ * @returns The height of the fixed element with the highest z-index at the top of the page
+ * @returns 页面顶部具有最高 z-index 的固定元素的高度
  */
-export const calculateFixedElementsHeight = (): number => {
+export const calculateFixedElementsHeight = (containerRef?: React.RefObject<HTMLElement>): number => {
   // 获取所有可能的固定元素
   const allElements = document.querySelectorAll('body *');
   let fixedElements: HTMLElement[] = [];
@@ -18,6 +20,11 @@ export const calculateFixedElementsHeight = (): number => {
   // 遍历所有元素，找出固定在顶部的元素
   allElements.forEach(element => {
     if (!(element instanceof HTMLElement)) return;
+
+    // 如果提供了容器引用，且元素是容器的子元素，则跳过
+    if (containerRef?.current && containerRef.current.contains(element)) {
+      return;
+    }
 
     const style = window.getComputedStyle(element);
     const position = style.position;
@@ -35,19 +42,21 @@ export const calculateFixedElementsHeight = (): number => {
     }
   });
 
-  // 按照 z-index 排序，确保按正确的层级顺序计算高度
-  fixedElements.sort((a, b) => {
-    const aZIndex = parseInt(window.getComputedStyle(a).zIndex || '0');
-    const bZIndex = parseInt(window.getComputedStyle(b).zIndex || '0');
-    return aZIndex - bZIndex;
+  // 如果没有找到固定元素，返回0
+  if (fixedElements.length === 0) {
+    return 0;
+  }
+
+  // 找到 z-index 最大的元素
+  const elementWithMaxZIndex = fixedElements.reduce((maxElement, currentElement) => {
+    const maxZIndex = parseInt(window.getComputedStyle(maxElement).zIndex || '0');
+    const currentZIndex = parseInt(window.getComputedStyle(currentElement).zIndex || '0');
+    return currentZIndex > maxZIndex ? currentElement : maxElement;
   });
 
-  // 计算总高度
-  let totalHeight = 0;
-  fixedElements.forEach(element => {
-    const rect = element.getBoundingClientRect();
-    totalHeight += rect.height;
-  });
+  // 计算 z-index 最大元素的高度
+  const rect = elementWithMaxZIndex.getBoundingClientRect();
+  const maxHeight = rect.height;
 
-  return totalHeight;
+  return maxHeight;
 };
