@@ -256,6 +256,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     },
     style: { cursor: 'pointer' },
     align: 'left',
+    visible: expandRowByClick,
     onCellClick: (record: any, index: number, expanded: string[]) => isOrNotExpend(record[rowKey], expanded),
     render: (value: any, record: any, index: number, expanded: string[], Layer: number) => {
       const isExpend = expanded.includes(record[rowKey]);
@@ -405,12 +406,8 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   };
 
   useEffect(() => {
-    const filteredColumns = getColumns(columns);
-    // 只有当启用expandRowByClick时才添加expandColum
-    const expandedColumns = expandRowByClick ? [expandColum, ...filteredColumns] : filteredColumns;
-    const processedColumns = processColumnsWithWidth(expandedColumns);
-    console.log('processedColumns', processedColumns);
-
+    const filteredColumns = getColumns([expandColum, ...columns]);
+    const processedColumns = processColumnsWithWidth(filteredColumns);
     setOriginalColumns(processedColumns);
   }, [columns, expandRowByClick, expandColum, tableWidth]);
 
