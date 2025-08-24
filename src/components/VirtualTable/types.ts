@@ -5,7 +5,7 @@
 export interface VirtualTableColumnWithChildren {
   /** 列标题 */
   /** Column title */
-  title: string;
+  title: React.ReactNode;
   /** 列数据字段（可选）*/
   /** Data index for the column (optional) */
   dataIndex?: string;
@@ -21,9 +21,15 @@ export interface VirtualTableColumnWithChildren {
   /** 自定义表头样式 */
   /** Custom header style */
   headerStyle?: React.CSSProperties;
-  /** 其他属性 */
-  /** Other properties */
-  [key: string]: any;
+  /** 自定义单元格样式 */
+  /** Custom cell style */
+  style?: React.CSSProperties;
+  /** 单元格点击事件 */
+  /** Cell click handler */
+  onCellClick?: (record: Record<string, any>, index: number, expanded: string[], layer: number) => void;
+  /** 是否可见 */
+  /** Whether the column is visible */
+  visible?: boolean;
 }
 
 /**
@@ -33,7 +39,7 @@ export interface VirtualTableColumnWithChildren {
 export interface VirtualTableColumnWithoutChildren {
   /** 列标题 */
   /** Column title */
-  title: string;
+  title: React.ReactNode;
   /** 列数据字段（必需）*/
   /** Data index for the column (required) */
   dataIndex: string;
@@ -58,9 +64,9 @@ export interface VirtualTableColumnWithoutChildren {
   /** 子列（无）*/
   /** Child columns (none) */
   children?: never;
-  /** 其他属性 */
-  /** Other properties */
-  [key: string]: any;
+  /** 是否可见 */
+  /** Whether the column is visible */
+  visible?: boolean;
 }
 
 /**

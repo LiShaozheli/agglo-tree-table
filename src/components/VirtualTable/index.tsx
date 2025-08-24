@@ -4,7 +4,7 @@ import ResizeObserver from 'rc-resize-observer';
 import { CaretRightOutlined, PlusSquareOutlined, MinusSquareOutlined } from '@ant-design/icons';
 import type { TableTheme } from './themes';
 import type { ReactNode } from 'react';
-import type { VirtualTableColumn } from './types';
+import type { VirtualTableColumn, VirtualTableColumnWithChildren, VirtualTableColumnWithoutChildren } from './types';
 import TableList from './tableList';
 import TableHeader from './tableHeader';
 import { predefinedThemes } from './themes';
@@ -151,7 +151,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
   } = props;
 
   const [expandedRowKeys, setExpandedRowKeys] = useState(defaultExpandedRowKeys || []);
-  const [originalColumns, setOriginalColumns] = useImmer<any[]>([]);
+  const [originalColumns, setOriginalColumns] = useImmer<VirtualTableColumn[]>([]);
   const [tableWidth, setTableWidth] = useState(0);
 
   const tableRef = useRef<HTMLDivElement>(null);
@@ -227,9 +227,9 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     collapseAll,
   }));
 
-  const expandColum = useMemo(() => ({
+  const expandColum: VirtualTableColumn = useMemo(() => ({
     width: expandColumnWidth,
-    title:
+    title: (
       <>
         <div style={{ flex: 1 }}></div>
         <div style={{ flex: 1, textAlign: 'center' }}>{expandColumnTitle}</div>
@@ -251,7 +251,8 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
             onClick={collapseAll}
           />}
         </div>
-      </>,
+      </>
+    ),
     dataIndex: expandDataIndex,
     headerStyle: {
       display: 'flex',
@@ -261,10 +262,10 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     style: { cursor: 'pointer' },
     align: 'left',
     visible: expandRowByClick,
-    onCellClick: (record: any, index: number, expanded: string[]) => isOrNotExpend(record[rowKey], expanded),
-    render: (value: any, record: any, index: number, expanded: string[], Layer: number) => {
+    onCellClick: (record: Record<string, any>, index: number, expanded: string[]) => isOrNotExpend(record[rowKey], expanded),
+    render: (value: any, record: Record<string, any>, index: number, expanded: string[], Layer: number) => {
       const isExpend = expanded.includes(record[rowKey]);
-      const getChiild = (data: any) => {
+      const getChiild = (data: Record<string, any>) => {
         if (!data.children) return null;
         if (expandIcon) return expandIcon(isExpend, data[expandDataIndex], data);
 
@@ -280,28 +281,29 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
                 marginLeft: `${Layer * indentSize}px`,
               }}
             />
-            {`${data[expandDataIndex]}(${data.length || data.children.length})`}
+            {`${data[expandDataIndex]}(${data.length || data.children?.length || 0})`}
           </>
         );
       };
       return getChiild(record);
     },
+    children: [],
   }), [expandColumnWidth, expandedRowKeys, showExpandAll, expandColumnTitle, expandDataIndex, tableTheme.primaryColor, indentSize, expandIcon, rowKey, expandRowByClick]);
 
   // 修改 getColumns 函数，支持列的 visible 属性
-  const getColumns = (cols: any[]): any[] => {
-    const filterVisibleColumns = (columns: any[]): any[] => {
+  const getColumns = (cols: VirtualTableColumn[]): VirtualTableColumn[] => {
+    const filterVisibleColumns = (columns: VirtualTableColumn[]): VirtualTableColumn[] => {
       return columns
         .map(column => {
           // 如果有子列，递归处理
-          if (column.children?.length > 0) {
+          if (column.children && column.children.length > 0) {
             const filteredChildren = filterVisibleColumns(column.children);
             // 如果子列中有可见的，则保留该列并使用过滤后的子列
             if (filteredChildren.length > 0) {
               return {
                 ...column,
                 children: filteredChildren
-              };
+              } as VirtualTableColumnWithChildren;
             }
             // 如果没有可见的子列，则根据当前列自身的 visible 属性决定是否显示
             return column.visible !== false ? column : null;
@@ -309,7 +311,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           // 如果没有子列，检查 visible 属性
           return column.visible !== false ? column : null;
         })
-        .filter(Boolean) as any[]; // 过滤掉 null 值
+        .filter((column): column is VirtualTableColumn => column !== null); // 过滤掉 null 值
     };
 
     return filterVisibleColumns(cols);
@@ -320,20 +322,22 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
    * @param columns 原始列数组
    * @returns 处理后的列数组，保持原始结构
    */
-  const processColumnsWithWidth = (columns: any[]) => {
+  const processColumnsWithWidth = (columns: VirtualTableColumn[]): VirtualTableColumn[] => {
     // 先计算总宽度和未设置宽度的列
     let totalWidth = 0;
     const colsNoWidth: Record<string, boolean> = {};
 
-    const calculateWidth = (cols: any[]) => {
+    const calculateWidth = (cols: VirtualTableColumn[]) => {
       cols.forEach(column => {
-        if (column.children?.length > 0) {
+        if (column.children && column.children.length > 0) {
           calculateWidth(column.children);
         } else {
           if (!column.width) {
-            colsNoWidth[column.dataIndex] = true;
+            if ('dataIndex' in column && column.dataIndex) {
+              colsNoWidth[column.dataIndex] = true;
+            }
           }
-          totalWidth += column.width || 0;
+          totalWidth += (typeof column.width === 'number' ? column.width : 0);
         }
       });
     };
@@ -342,7 +346,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
 
     // 计算需要分配的宽度，考虑边框的影响
     // 表格有竖向边框时，每个列间会有1px的边框，总共需要 (列数-1) 像素的边框宽度
-    const flatColumns = columns.flatMap(col => col.children || col);
+    const flatColumns = columns.flatMap(col => col.children || (col as VirtualTableColumnWithoutChildren));
     const borderWidth = flatColumns.length > 0 ? (flatColumns.length - 1) : 0;
     let extraWidthPerCol = 0;
 
@@ -365,14 +369,14 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     }
 
     // 创建新的列结构并设置宽度
-    const assignWidth = (cols: any[]): any[] => {
+    const assignWidth = (cols: VirtualTableColumn[]): VirtualTableColumn[] => {
       return cols.map(column => {
-        if (column.children?.length > 0) {
+        if (column.children && column.children.length > 0) {
           // 递归处理子列
           return {
             ...column,
             children: assignWidth(column.children)
-          };
+          } as VirtualTableColumnWithChildren;
         } else {
           // 处理叶子节点列
           let finalWidth = column.width || 0;
@@ -390,18 +394,18 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           // 如果该列已设置宽度且需要按比例调整
           else if (column.width && proportion !== 1) {
             // 按比例调整已设置宽度的列
-            finalWidth = Math.floor(column.width * proportion);
+            finalWidth = Math.floor((typeof column.width === 'number' ? column.width : 0) * proportion);
           }
 
           // 如果该列未设置宽度且需要按比例调整（在分配了默认宽度或额外宽度后）
           if (!column.width && proportion !== 1) {
-            finalWidth = Math.floor(finalWidth * proportion);
+            finalWidth = Math.floor((finalWidth as number) * proportion);
           }
 
           return {
             ...column,
             width: finalWidth
-          };
+          } as VirtualTableColumnWithoutChildren;
         }
       });
     };
@@ -413,7 +417,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     const filteredColumns = getColumns([expandColum, ...columns]);
     const processedColumns = processColumnsWithWidth(filteredColumns);
     setOriginalColumns(processedColumns);
-  }, [columns, expandRowByClick, expandColum, tableWidth]);
+  }, [columns, expandRowByClick, expandColum.visible, expandColum.width, tableWidth]);
 
   return (
     <ResizeObserver

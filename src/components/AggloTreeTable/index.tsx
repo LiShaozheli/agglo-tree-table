@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import VirtualTable, { type VirtualTableProps, type VirtualTableHandles } from '../VirtualTable';
 import { TreeClass } from '../../utils/treeClass';
 import ColumnManager from './columnManager';
@@ -25,13 +25,16 @@ export interface AggregateKeysType {
  * Props for the AggloTreeTable component
  * AggloTreeTable 组件的 Props
  */
-export interface AggloTreeTableProps extends Omit<VirtualTableProps, 'columns'> {
+export interface AggloTreeTableProps extends Omit<VirtualTableProps, 'columns' | 'dataSource' | 'expandable'> {
   /** Keys to group by, in hierarchical order */
   /** 用于分组的键，按层级顺序排列 */
   groupKeys?: string[];
   /** Table columns configuration */
   /** 表格列配置 */
   columns?: ColumnType[];
+  /** Table data source */
+  /** 表格数据源 */
+  dataSource?: Array<Record<string, any>>;
   /** Configuration for data aggregation */
   /** 数据聚合配置 */
   AggregateKeys?: AggregateKeysType;
@@ -53,9 +56,6 @@ export interface AggloTreeTableProps extends Omit<VirtualTableProps, 'columns'> 
   /** Height of the table container */
   /** 表格容器的高度 */
   height?: number | string;
-  /** Whether to enable sticky header */
-  /** 是否启用粘性表头 */
-  sticky?: boolean;
 }
 
 // 添加AggloTreeTable的公开方法接口
@@ -96,43 +96,41 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
   const {
     groupKeys = [],
     columns = [],
-    dataSource,
+    dataSource = [],
     rowKey,
     AggregateKeys,
-    loading,
-    expandable,
     sort,
     showColumnManagement = false,
     columnManagerPosition = 'right',
     width = '100%',
     height,
     theme,
+    ...restProps
   } = props;
+
+  const expandable = (props as VirtualTableProps).expandable;
 
   const expandDataIndex = expandable?.expandDataIndex ?? 'expand';
 
-  const [newDataSource, setNewDataSource] = useState<any[]>([]);
+  const [processedDataSource, setProcessedDataSource] = useState<any[]>([]);
   const [processedColumns, setProcessedColumns] = useState<any[]>(columns);
-  const [expandRowByClick, setExpandRowByClick] = useState(false);
   const virtualTableRef = useRef<VirtualTableHandles>(null);
 
+  // 处理数据源，包括分组和聚合
   useEffect(() => {
     if (groupKeys?.length < 1) {
-      setNewDataSource(dataSource || []);
-      setExpandRowByClick(false);
+      setProcessedDataSource(dataSource);
     } else {
-      setExpandRowByClick(true);
       const arrayTreeData = new TreeClass();
-      arrayTreeData.creatTreeData(dataSource || [], groupKeys, rowKey, expandDataIndex);
+      arrayTreeData.creatTreeData(dataSource, groupKeys, rowKey, expandDataIndex);
       if (!AggregateKeys) {
-        setNewDataSource(arrayTreeData.treeData);
-        return;
+        setProcessedDataSource(arrayTreeData.treeData);
+      } else {
+        const newData = arrayTreeData.addTree(AggregateKeys, sort);
+        setProcessedDataSource(Array.isArray(newData) ? newData : [newData]);
       }
-      const newData = arrayTreeData.addTree(AggregateKeys, sort);
-      // 修复类型错误：确保传递给 setNewDataSource 的始终是数组
-      setNewDataSource(Array.isArray(newData) ? newData : [newData]);
     }
-  }, [dataSource, AggregateKeys, expandDataIndex, groupKeys, rowKey, sort]);
+  }, [dataSource, groupKeys, rowKey, expandDataIndex, AggregateKeys, sort]);
 
   // 使用useImperativeHandle暴露方法给父组件调用
   React.useImperativeHandle(ref, () => ({
@@ -163,7 +161,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     <div style={{
       position: 'relative',
       display: 'flex',
-      height: height,
+      height: height || '100%',
       width: width,
       overflowX: 'hidden', // 防止在 AggloTreeTable 级别出现横向滚动条
       overflowY: 'visible',
@@ -188,13 +186,14 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
       <div style={virtualTableContainerStyle}>
         <VirtualTable
           ref={virtualTableRef}
-          {...props}
-          loading={loading}
+          {...restProps}
           columns={processedColumns}
-          dataSource={newDataSource}
+          dataSource={processedDataSource}
           rowKey={rowKey}
           expandable={{
-            expandRowByClick,
+            expandRowByClick: groupKeys?.length > 0,
+            childrenColumnName: 'children',
+            expandDataIndex,
             ...expandable,
           }}
         />

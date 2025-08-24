@@ -187,7 +187,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
 
             return (
               <div
-                key={column.key || column.dataIndex || index}
+                key={column.dataIndex || index}
                 style={{
                   width: computedWidth,
                   borderRight: index < oldColumns.length - 1 ? getHeaderColumnBorderStyle() : 'none',
@@ -211,7 +211,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
             // 无子列的表头
             return (
               <div
-                key={column.key || column.dataIndex || index}
+                key={column.dataIndex || index}
                 style={{
                   width: column.width,
                   borderRight: index < oldColumns.length - 1 ? getHeaderColumnBorderStyle() : 'none',
