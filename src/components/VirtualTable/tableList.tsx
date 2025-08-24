@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useEffect } from 'react';
 import List from 'rc-virtual-list';
 import { predefinedThemes, type TableTheme } from './themes';
+import type { VirtualTableColumn } from './types';
 import './index.css';
 
 /**
@@ -16,7 +17,7 @@ interface TableListProps {
   dataSource: Array<Record<string, any>>;
   /** Table columns */
   /** 表格列 */
-  columns: Record<string, any>[];
+  columns: VirtualTableColumn[];
   /** Expanded row keys */
   /** 展开的行键 */
   expandedRowKeys: string[];
@@ -38,12 +39,12 @@ interface TableListProps {
  * Flatten nested columns into a single array
  * 将嵌套列展平为单个数组
  */
-const flattenColumns = (columns: any[]): any[] => {
-  const result: any[] = [];
+const flattenColumns = (columns: VirtualTableColumn[]): VirtualTableColumn[] => {
+  const result: VirtualTableColumn[] = [];
 
-  const traverse = (cols: any[]) => {
+  const traverse = (cols: VirtualTableColumn[]) => {
     cols.forEach(column => {
-      if (column.children?.length > 0) {
+      if (column.children && column.children.length > 0) {
         traverse(column.children);
       } else {
         result.push(column);
@@ -136,7 +137,7 @@ const TableList = (props: TableListProps) => {
 
   const renderRow = (
     dataItem: Record<string, any>,
-    columns: Record<string, any>[],
+    columns: VirtualTableColumn[],
     index: number,
     expanded: string[]
   ): React.ReactNode => {
@@ -158,7 +159,7 @@ const TableList = (props: TableListProps) => {
         onMouseLeave={(e) => handleMouseLeave(e, index, theme.bodyBgColor, theme.alternatingRowBgColor)}
         {...(onRow ? onRow(dataItem, index) : {})}
       >
-        {columns.map((column: Record<string, any>, colIndex: number) => (
+        {columns.map((column, colIndex) => (
           <div
             key={`${dataItem[rowKey]}-${column.dataIndex}`}
             className="agglo-tree-table-cell"
@@ -167,7 +168,7 @@ const TableList = (props: TableListProps) => {
               // 只为非最后一列添加右边框
               borderRight: colIndex < columns.length - 1 ? getColumnBorderStyle() : 'none',
             }}
-            onClick={column.onCellClick ? () => column.onCellClick(dataItem, index, expanded, dataItem._layer) : undefined}
+            onClick={column.onCellClick ? () => column.onCellClick?.(dataItem, index, expanded, dataItem._layer) : undefined}
           >
             <div className={`agglo-tree-table-cell-inner ${
               column.align === 'right' ? 'agglo-tree-table-cell-inner-right' : 
@@ -177,9 +178,10 @@ const TableList = (props: TableListProps) => {
             style={{
               ...(column.style || {}), // 将用户自定义样式移到内层
             }}>
-              {column.render
+              {column.render && column.dataIndex
                 ? column.render(dataItem[column.dataIndex], dataItem, index, expanded, dataItem._layer)
-                : dataItem[column.dataIndex]}
+                : column.dataIndex ? dataItem[column.dataIndex] : ''}
+
             </div>
           </div>
         ))}

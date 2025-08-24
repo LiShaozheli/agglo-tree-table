@@ -3,6 +3,7 @@ import VirtualTable, { type VirtualTableProps, type VirtualTableHandles } from '
 import { TreeClass } from '../../utils/treeClass';
 import ColumnManager from './columnManager';
 import type { TableTheme } from '../VirtualTable/themes';
+import type { ColumnType } from './types';
 
 /**
  * Configuration for data aggregation
@@ -24,17 +25,16 @@ export interface AggregateKeysType {
  * Props for the AggloTreeTable component
  * AggloTreeTable 组件的 Props
  */
-export interface AggloTreeTableProps extends VirtualTableProps {
+export interface AggloTreeTableProps extends Omit<VirtualTableProps, 'columns'> {
   /** Keys to group by, in hierarchical order */
   /** 用于分组的键，按层级顺序排列 */
   groupKeys?: string[];
+  /** Table columns configuration */
+  /** 表格列配置 */
+  columns?: ColumnType[];
   /** Configuration for data aggregation */
   /** 数据聚合配置 */
-  AggregateKeys?: {
-    addkeys?: string[];
-    addBNkeys?: string[];
-    equalKeys?: string[];
-  };
+  AggregateKeys?: AggregateKeysType;
   /** Whether the table container is resizable */
   /** 表格容器是否可调整大小 */
   resizable?: boolean;

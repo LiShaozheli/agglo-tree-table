@@ -4,10 +4,13 @@ import ResizeObserver from 'rc-resize-observer';
 import { CaretRightOutlined, PlusSquareOutlined, MinusSquareOutlined } from '@ant-design/icons';
 import type { TableTheme } from './themes';
 import type { ReactNode } from 'react';
+import type { VirtualTableColumn } from './types';
 import TableList from './tableList';
 import TableHeader from './tableHeader';
 import { predefinedThemes } from './themes';
 import './index.css';
+
+export type { VirtualTableColumn };
 
 /**
  * Configuration for expandable rows
@@ -59,7 +62,7 @@ export interface VirtualTableProps {
   rowKey: string;
   /** Table columns configuration */
   /** 表格列配置 */
-  columns?: any[];
+  columns?: VirtualTableColumn[];
   /** Table data source */
   /** 表格数据源 */
   dataSource?: Array<Record<string, any>>;

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SettingOutlined, HolderOutlined } from '@ant-design/icons';
 import type { TableTheme } from '../VirtualTable/themes';
+import type { ColumnType } from './types';
+import type { VirtualTableColumn } from '../VirtualTable/types';
 import {
   DndContext,
   closestCenter,
@@ -8,8 +10,12 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragOverEvent
 } from '@dnd-kit/core';
 import {
+  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -19,35 +25,28 @@ import { CSS } from '@dnd-kit/utilities';
 
 export interface ColumnManagerProps {
   /** Table columns */
-  columns: any[];
+  columns: ColumnType[];
   /** Callback when column configuration changes */
-  onColumnChange: (columns: any[]) => void;
+  onColumnChange: (columns: ColumnType[]) => void;
   /** Table theme */
   theme?: TableTheme;
   /** Position of the column manager */
   position?: 'left' | 'right';
 }
 
-/**
- * 列信息类型定义
- */
-export type ColumnInfo = {
-  /** 列标题 */
-  title: string;
-  /** 列数据字段 */
-  dataIndex: string;
-  /** 列是否可见 */
-  visible?: boolean;
-  /** 子列 */
-  children?: ColumnInfo[];
-  /** 其他属性 */
-  [key: string]: any;
-};
-
-interface FlattenedColumn extends ColumnInfo {
+interface FlattenedColumn extends ColumnType {
   depth: number;
   path: string;
   originalIndex: number;
+}
+
+interface SortableTreeItemProps {
+  column: FlattenedColumn;
+  theme?: TableTheme;
+  toggleColumnVisibility: (dataIndex: string) => void;
+  toggleParentColumnVisibility: (columnPath: string) => void;
+  expandedKeys: Record<string, boolean>;
+  toggleExpanded: (path: string) => void;
 }
 
 // 获取所有列（包括嵌套子列）
@@ -55,7 +54,7 @@ const extractAllColumns = (cols: any[]) => {
   const allColumns: any[] = [];
   const extract = (columns: any[]) => {
     columns.forEach(column => {
-      if (column.children?.length > 0) {
+      if (column.children && column.children.length > 0) {
         extract(column.children);
       } else {
         allColumns.push(column);
@@ -78,7 +77,7 @@ const flattenColumns = (columns: any[], depth = 0, parentPath: string[] = []): a
       originalIndex: index,
     });
     
-    if (column.children?.length > 0) {
+    if (column.children && column.children.length > 0) {
       result = result.concat(flattenColumns(column.children, depth + 1, [...parentPath, String(index)]));
     }
   });
@@ -133,6 +132,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   position = 'right',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
   const columnManagerRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLDivElement>(null);
@@ -174,31 +174,21 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   
   // 扁平化的列用于树状显示
   const flattenedColumns = flattenColumns(columns);
-  
-  // 初始化展开状态，默认全部展开
-  useEffect(() => {
-    const initialExpandedKeys: Record<string, boolean> = {};
-    flattenedColumns.forEach(col => {
-      if (col.children && col.children.length > 0) {
-        initialExpandedKeys[col.path] = true;
-      }
-    });
-    setExpandedKeys(initialExpandedKeys);
-  }, [columns]);
 
   // 处理拖拽开始事件
-  const handleDragStart = (event: any) => {
+  const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
+    setActiveId(active.id as string);
     
     // 收起同级别的所有节点（具有相同深度的节点）
     const collapsedKeys = { ...expandedKeys };
     // 找到当前拖拽节点的路径
-    const activePath = active.id;
+    const activePath = active.id as string;
     // 计算当前节点的深度
     const activeDepth = (activePath.match(/-/g) || []).length;
     
     // 收起所有具有相同深度的节点
-    flattenedColumns.forEach(col => {
+    flattenedColumns.forEach((col: FlattenedColumn) => {
       const colDepth = (col.path.match(/-/g) || []).length;
       // 如果节点深度与当前拖拽节点相同，且有子节点，则收起它
       if (colDepth === activeDepth && col.children && col.children.length > 0) {
@@ -210,7 +200,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   };
 
   // 处理列重新排序（支持改变父子级关系）
-  const handleDragOver = (event: any) => {
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     
     if (!over) return;
@@ -220,14 +210,15 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   };
 
   // 处理拖拽结束事件
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
 
     // 添加检查确保 over 对象存在
     if (over && active.id !== over.id) {
       // 重新排列列的顺序
-      const activeIndex = flattenedColumns.findIndex((col: any) => col.path === active.id);
-      const overIndex = flattenedColumns.findIndex((col: any) => col.path === over.id);
+      const activeIndex = flattenedColumns.findIndex((col: FlattenedColumn) => col.path === active.id);
+      const overIndex = flattenedColumns.findIndex((col: FlattenedColumn) => col.path === over.id);
       
       if (activeIndex !== -1 && overIndex !== -1) {
         // 重新排序扁平化的列
@@ -243,7 +234,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     
     // 恢复展开状态
     const restoredKeys: Record<string, boolean> = {};
-    flattenedColumns.forEach(col => {
+    flattenedColumns.forEach((col: FlattenedColumn) => {
       if (col.children && col.children.length > 0) {
         restoredKeys[col.path] = true;
       }
@@ -257,9 +248,9 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     const newColumns = JSON.parse(JSON.stringify(columns));
     
     // 递归查找并更新列的可见性
-    const updateColumnVisibility = (cols: any[]) => {
+    const updateColumnVisibility = (cols: ColumnType[]) => {
       cols.forEach(col => {
-        if (col.children?.length > 0) {
+        if (col.children && col.children.length > 0) {
           updateColumnVisibility(col.children);
         }
         // 无论是否有子列，只要 dataIndex 匹配就切换可见性
@@ -303,10 +294,10 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
       targetColumn.visible = newVisibleState;
       
       // 如果有子列，也一并设置它们的可见性状态
-      const updateChildrenVisibility = (cols: any[]) => {
+      const updateChildrenVisibility = (cols: ColumnType[]) => {
         cols.forEach(col => {
           col.visible = newVisibleState;
-          if (col.children?.length > 0) {
+          if (col.children && col.children.length > 0) {
             updateChildrenVisibility(col.children);
           }
         });
@@ -326,9 +317,9 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     const newColumns = JSON.parse(JSON.stringify(columns));
     
     // 递归更新所有列的可见性
-    const updateAllColumnsVisibility = (cols: any[]) => {
+    const updateAllColumnsVisibility = (cols: ColumnType[]) => {
       cols.forEach(col => {
-        if (col.children?.length > 0) {
+        if (col.children && col.children.length > 0) {
           updateAllColumnsVisibility(col.children);
         } else {
           col.visible = isVisible;
@@ -471,7 +462,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={flattenedColumns.map(col => col.path)}
+              items={flattenedColumns.map((col: FlattenedColumn) => col.path)}
               strategy={verticalListSortingStrategy}
             >
               <div style={{ 
@@ -479,7 +470,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
                 overflowY: 'auto',
                 padding: '4px 0'
               }}>
-                {flattenedColumns.map((column) => (
+                {flattenedColumns.map((column: FlattenedColumn) => (
                   <SortableTreeItem
                     key={column.path}
                     column={column}
@@ -508,14 +499,7 @@ const SortableTreeItem = ({
   toggleParentColumnVisibility,
   expandedKeys,
   toggleExpanded
-}: {
-  column: FlattenedColumn;
-  theme?: TableTheme;
-  toggleColumnVisibility: (dataIndex: string) => void;
-  toggleParentColumnVisibility: (columnPath: string) => void;
-  expandedKeys: Record<string, boolean>;
-  toggleExpanded: (path: string) => void;
-}) => {
+}: SortableTreeItemProps) => {
   const {
     attributes,
     listeners,
@@ -541,7 +525,7 @@ const SortableTreeItem = ({
   };
 
   // 检查是否应该显示该列（父级都展开时才显示）
-  const isVisible = () => {
+  const isVisible = (): boolean => {
     const pathParts = column.path.split('-');
     for (let i = 0; i < pathParts.length - 1; i++) {
       const parentPath = pathParts.slice(0, i + 1).join('-');

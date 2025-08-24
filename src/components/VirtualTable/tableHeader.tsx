@@ -1,5 +1,6 @@
 import React, { FC, memo, useMemo, useState } from 'react';
 import { predefinedThemes, type TableTheme } from './themes';
+import type { VirtualTableColumn } from './types';
 import StickyContainer from '../StickyContainer';
 import './index.css';
 
@@ -10,7 +11,7 @@ import './index.css';
 export interface TableHeaderProps {
   /** Table columns */
   /** 表格列 */
-  columns: Record<string, any>[];
+  columns: VirtualTableColumn[];
   /** Header row height */
   /** 表头行高度 */
   headerRowHeight?: number;
@@ -55,12 +56,12 @@ const TableHeader: FC<TableHeaderProps> = props => {
   const columnWidthMap = useMemo(() => {
     const map: Record<string, number> = {};
 
-    const processColumns = (cols: any[]) => {
+    const processColumns = (cols: VirtualTableColumn[]) => {
       cols.forEach(column => {
         if (column.dataIndex && column.width) {
-          map[column.dataIndex] = column.width;
+          map[column.dataIndex] = typeof column.width === 'string' ? parseInt(column.width, 10) : column.width;
         }
-        if (column.children?.length > 0) {
+        if (column.children && column.children.length > 0) {
           processColumns(column.children);
         }
       });
@@ -103,7 +104,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
     return `1px solid ${color}`;
   };
 
-  const renderHeader = (oldColumns: Record<string, any>, layer = 0, number?: number) => {
+  const renderHeader = (oldColumns: VirtualTableColumn[], layer = 0, number?: number) => {
     if (layer > headerLayer) setHeaderLayer(layer);
 
     // 列宽调整处理函数 - 只更新当前表格中的列
@@ -163,20 +164,20 @@ const TableHeader: FC<TableHeaderProps> = props => {
         }}
         key={`header-layer-${layer}-${number}`}
       >
-        {oldColumns.map((column: any, index: number) => {
+        {oldColumns.map((column, index) => {
           const borderWidth = getHeaderRowBorderStyle() === 'none' ? 0 : 1;
           // 计算子列总宽度（包含border）
-          const calculateChildrenWidth = (col: any): number => {
+          const calculateChildrenWidth = (col: VirtualTableColumn): number => {
             if (!col.children || col.children.length === 0) {
-              return col.width + borderWidth || 0;
+              return (typeof col.width === 'string' ? parseInt(col.width, 10) : col.width || 0) + borderWidth;
             }
             // 递归计算子列宽度
-            const childrenWidth = col.children.reduce((sum: number, child: any) => sum + calculateChildrenWidth(child), 0);
+            const childrenWidth = col.children.reduce((sum, child) => sum + calculateChildrenWidth(child), 0);
             return childrenWidth;
           };
 
           // 对有子列和无子列的表头进行彻底区分渲染
-          if (column.children?.length > 0) {
+          if (column.children && column.children.length > 0) {
             // 有子列的表头
             const computedWidth = calculateChildrenWidth(column) - borderWidth;
 
@@ -199,7 +200,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
                   {column.title}
                 </div>
                 {/* 列宽调整手柄 - 有子列的表头不显示调整手柄 */}
-                {column.children?.length > 0 && renderHeader(column.children, layer + 1, index)}
+                {column.children && column.children.length > 0 && renderHeader(column.children, layer + 1, index)}
               </div>
             );
           } else {
@@ -226,7 +227,7 @@ const TableHeader: FC<TableHeaderProps> = props => {
                 {/* 列宽调整手柄 - 仅在启用时渲染 */}
                 {resizable && (
                   <div
-                    onMouseDown={(e) => handleResizeStart(column.dataIndex, e)}
+                    onMouseDown={(e) => handleResizeStart(column.dataIndex || '', e)}
                     className="virtual-table-column-resizer"
                     style={{
                       backgroundColor: 'transparent',
