@@ -18,6 +18,9 @@ export interface VirtualTableColumnWithChildren {
   /** 列对齐方式 */
   /** Column alignment */
   align?: 'left' | 'center' | 'right';
+  /** 自定义单元格渲染函数 */
+  /** Custom cell render function */
+  render?: (value: any, record: Record<string, any>, index: number, expanded: string[], layer: number) => React.ReactNode;
   /** 自定义表头样式 */
   /** Custom header style */
   headerStyle?: React.CSSProperties;
