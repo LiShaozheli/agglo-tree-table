@@ -1,10 +1,13 @@
 ---
 nav:
-  title: 组件
+  title: VirtualTable
   path: /components
+group:
+  title: 表格组件
+  path: /components/table
 ---
 
-# VirtualTable
+# VirtualTable - 虚拟表格
 
 VirtualTable 是一个用于高效渲染大型数据集的虚拟化表格组件。该组件使用虚拟化技术仅渲染可见行，从而提高大型数据集的性能。它还支持可展开行和粘性表头。
 
@@ -392,3 +395,4 @@ export default () => (
     }}
   />
 );
+```

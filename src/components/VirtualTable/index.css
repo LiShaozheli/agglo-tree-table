@@ -5,6 +5,7 @@
 
 .virtual-table-container {
   overflow: auto;
+   height: 100%;
 }
 
 .virtual-table-min-width {

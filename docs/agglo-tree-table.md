@@ -1,10 +1,13 @@
 ---
 nav:
-  title: 组件
+  title: AggloTreeTable
   path: /components
+group:
+  title: 表格组件
+  path: /components/table
 ---
 
-# AggloTreeTable
+# AggloTreeTable - 聚合树形表格
 
 AggloTreeTable 是一个功能强大的 React 组件，它通过树形数据分组和聚合功能扩展了虚拟化表格。它特别适用于需要在多个维度上对数据进行分组和汇总的金融应用。
 
@@ -14,13 +17,13 @@ AggloTreeTable 是一个功能强大的 React 组件，它通过树形数据分�
 
 通过 `groupKeys` 属性指定分组字段，组件会自动将数据按照指定字段进行分组。
 
-<code src="../../../examples/basic-example.tsx" title="基础示例" description="最基本的 AggloTreeTable 用法，展示数据分组和聚合功能"></code>
+<code src="../examples/basic-example.tsx" title="基础示例" description="最基本的 AggloTreeTable 用法，展示数据分组和聚合功能"></code>
 
 ### 使用列管理功能
 
 通过 `showColumnManagement` 属性启用列管理功能，用户可以通过界面控制列的显示与隐藏。
 
-<code src="../../../examples/column-management-example.tsx" title="列管理示例" description="展示如何使用内置的列管理功能控制列的显示与隐藏"></code>
+<code src="../examples/column-management-example.tsx" title="列管理示例" description="展示如何使用内置的列管理功能控制列的显示与隐藏"></code>
 
 ### 使用全部展开/收起功能
 
@@ -125,7 +128,7 @@ export default () => {
 
 AggloTreeTable 支持嵌套表头，可以创建复杂的表头结构来更好地组织和展示数据。
 
-<code src="../../../examples/nested-header-example.tsx" title="嵌套表头示例" description="展示如何使用嵌套表头来组织复杂的表格结构"></code>
+<code src="../examples/nested-header-example.tsx" title="嵌套表头示例" description="展示如何使用嵌套表头来组织复杂的表格结构"></code>
 
 ## API
 

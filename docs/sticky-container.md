@@ -1,10 +1,13 @@
 ---
 nav:
-  title: 组件
+  title: StickyContainer
   path: /components
+group:
+  title: 表格组件
+  path: /components/table
 ---
 
-# StickyContainer
+# StickyContainer - 粘滞容器
 
 StickyContainer 是一个通用的粘滞容器组件，可以将任意内容在滚动时固定在页面顶部。该组件会自动检测页面上已存在的固定元素，并将自身定位在这些固定元素的下方，同时支持水平滚动同步。
 
