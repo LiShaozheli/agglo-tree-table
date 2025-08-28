@@ -3,7 +3,7 @@ import VirtualTable, { type VirtualTableProps, type VirtualTableHandles } from '
 import { TreeClass } from '../../utils/treeClass';
 import ColumnManager from './columnManager';
 import { predefinedThemes, type TableTheme } from '../VirtualTable/themes';
-import type { ColumnType } from './types';
+import type { VirtualTableColumn } from './types';
 
 /**
  * Configuration for data aggregation
@@ -31,7 +31,7 @@ export interface AggloTreeTableProps extends Omit<VirtualTableProps, 'columns' |
   groupKeys?: string[];
   /** Table columns configuration */
   /** 表格列配置 */
-  columns?: ColumnType[];
+  columns?: VirtualTableColumn[];
   /** Table data source */
   /** 表格数据源 */
   dataSource?: Array<Record<string, any>>;
