@@ -4,7 +4,7 @@ import ResizeObserver from 'rc-resize-observer';
 import { CaretRightOutlined, PlusSquareOutlined, MinusSquareOutlined } from '@ant-design/icons';
 import type { TableTheme } from './themes';
 import type { ReactNode } from 'react';
-import type { VirtualTableColumn, VirtualTableColumnWithChildren, VirtualTableColumnWithoutChildren } from './types';
+import type { VirtualTableColumn } from './types';
 import TableList from './tableList';
 import TableHeader from './tableHeader';
 import { predefinedThemes } from './themes';
@@ -303,7 +303,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
               return {
                 ...column,
                 children: filteredChildren
-              } as VirtualTableColumnWithChildren;
+              };
             }
             // 如果没有可见的子列，则根据当前列自身的 visible 属性决定是否显示
             return column.visible !== false ? column : null;
@@ -346,7 +346,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
 
     // 计算需要分配的宽度，考虑边框的影响
     // 表格有竖向边框时，每个列间会有1px的边框，总共需要 (列数-1) 像素的边框宽度
-    const flatColumns = columns.flatMap(col => col.children || (col as VirtualTableColumnWithoutChildren));
+    const flatColumns = columns.flatMap(col => col.children || col);
     const borderWidth = flatColumns.length > 0 ? (flatColumns.length - 1) : 0;
     let extraWidthPerCol = 0;
 
@@ -376,7 +376,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           return {
             ...column,
             children: assignWidth(column.children)
-          } as VirtualTableColumnWithChildren;
+          };
         } else {
           // 处理叶子节点列
           let finalWidth = column.width || 0;
@@ -405,7 +405,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           return {
             ...column,
             width: finalWidth
-          } as VirtualTableColumnWithoutChildren;
+          };
         }
       });
     };

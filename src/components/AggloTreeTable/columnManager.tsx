@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SettingOutlined, HolderOutlined } from '@ant-design/icons';
 import type { TableTheme } from '../VirtualTable/themes';
-import type { ColumnType } from './types';
 import type { VirtualTableColumn } from '../VirtualTable/types';
 import {
   DndContext,
@@ -15,7 +14,6 @@ import {
   type DragOverEvent
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -25,20 +23,20 @@ import { CSS } from '@dnd-kit/utilities';
 
 export interface ColumnManagerProps {
   /** Table columns */
-  columns: ColumnType[];
+  columns: VirtualTableColumn[];
   /** Callback when column configuration changes */
-  onColumnChange: (columns: ColumnType[]) => void;
+  onColumnChange: (columns: VirtualTableColumn[]) => void;
   /** Table theme */
   theme?: TableTheme;
   /** Position of the column manager */
   position?: 'left' | 'right';
 }
 
-interface FlattenedColumn extends ColumnType {
+type FlattenedColumn = VirtualTableColumn & {
   depth: number;
   path: string;
   originalIndex: number;
-}
+};
 
 interface SortableTreeItemProps {
   column: FlattenedColumn;
@@ -50,9 +48,9 @@ interface SortableTreeItemProps {
 }
 
 // 获取所有列（包括嵌套子列）
-const extractAllColumns = (cols: any[]) => {
-  const allColumns: any[] = [];
-  const extract = (columns: any[]) => {
+const extractAllColumns = (cols: VirtualTableColumn[]) => {
+  const allColumns: VirtualTableColumn[] = [];
+  const extract = (columns: VirtualTableColumn[]) => {
     columns.forEach(column => {
       if (column.children && column.children.length > 0) {
         extract(column.children);
@@ -66,8 +64,8 @@ const extractAllColumns = (cols: any[]) => {
 };
 
 // 扁平化列结构，用于树状显示
-const flattenColumns = (columns: any[], depth = 0, parentPath: string[] = []): any[] => {
-  let result: any[] = [];
+const flattenColumns = (columns: VirtualTableColumn[], depth = 0, parentPath: string[] = []): FlattenedColumn[] => {
+  let result: FlattenedColumn[] = [];
   columns.forEach((column, index) => {
     const path = [...parentPath, String(index)].join('-');
     result.push({
@@ -85,9 +83,9 @@ const flattenColumns = (columns: any[], depth = 0, parentPath: string[] = []): a
 };
 
 // 从扁平化结构重建嵌套结构
-const rebuildNestedColumnsFromFlattened = (flattenedColumns: any[], originalColumns: any[]): any[] => {
+const rebuildNestedColumnsFromFlattened = (flattenedColumns: FlattenedColumn[]): VirtualTableColumn[] => {
   // 创建一个映射来存储所有列的副本
-  const columnMap: Record<string, any> = {};
+  const columnMap: Record<string, FlattenedColumn> = {};
 
   // 创建所有列的副本
   flattenedColumns.forEach(col => {
@@ -100,7 +98,7 @@ const rebuildNestedColumnsFromFlattened = (flattenedColumns: any[], originalColu
   });
 
   // 重新构建嵌套结构
-  const rootColumns: any[] = [];
+  const rootColumns: VirtualTableColumn[] = [];
 
   flattenedColumns.forEach(col => {
     const pathParts = col.path.split('-');
@@ -229,7 +227,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
         newFlattenedColumns.splice(overIndex, 0, movedItem);
 
         // 重建嵌套结构
-        const newColumns = rebuildNestedColumnsFromFlattened(newFlattenedColumns, columns);
+        const newColumns = rebuildNestedColumnsFromFlattened(newFlattenedColumns);
         onColumnChange(newColumns);
       }
     }
@@ -250,7 +248,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     const newColumns = JSON.parse(JSON.stringify(columns));
 
     // 递归查找并更新列的可见性
-    const updateColumnVisibility = (cols: ColumnType[]) => {
+    const updateColumnVisibility = (cols: VirtualTableColumn[]) => {
       cols.forEach(col => {
         if (col.children && col.children.length > 0) {
           updateColumnVisibility(col.children);
@@ -296,7 +294,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
       targetColumn.visible = newVisibleState;
 
       // 如果有子列，也一并设置它们的可见性状态
-      const updateChildrenVisibility = (cols: ColumnType[]) => {
+      const updateChildrenVisibility = (cols: VirtualTableColumn[]) => {
         cols.forEach(col => {
           col.visible = newVisibleState;
           if (col.children && col.children.length > 0) {
@@ -319,7 +317,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
     const newColumns = JSON.parse(JSON.stringify(columns));
 
     // 递归更新所有列的可见性
-    const updateAllColumnsVisibility = (cols: ColumnType[]) => {
+    const updateAllColumnsVisibility = (cols: VirtualTableColumn[]) => {
       cols.forEach(col => {
         if (col.children && col.children.length > 0) {
           updateAllColumnsVisibility(col.children);
