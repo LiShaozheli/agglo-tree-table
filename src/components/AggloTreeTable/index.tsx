@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import VirtualTable, { type VirtualTableProps, type VirtualTableHandles } from '../VirtualTable';
 import { TreeClass } from '../../utils/treeClass';
 import ColumnManager from './columnManager';
-import type { TableTheme } from '../VirtualTable/themes';
+import { predefinedThemes, type TableTheme } from '../VirtualTable/themes';
 import type { ColumnType } from './types';
 
 /**
@@ -103,7 +103,6 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     showColumnManagement = false,
     columnManagerPosition = 'right',
     width = '100%',
-    height,
     theme,
     ...restProps
   } = props;
@@ -139,65 +138,39 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
   }));
 
   // 处理主题配置
-  const tableTheme: TableTheme | undefined = typeof theme === 'string' ? undefined : theme;
-
-  // ColumnManager 的宽度计算 (按钮宽度 24px + 左右边框各 1px)
-  const columnManagerWidth = 26;
-
-  // 计算 VirtualTable 容器的样式
-  const virtualTableContainerStyle = showColumnManagement && columns
-    ? {
-      width: `calc(${typeof width === 'number' ? `${width}px` : width} - ${columnManagerWidth}px)`,
-      height: '100%',
-      marginLeft: columnManagerPosition === 'left' ? `${columnManagerWidth}px` : '0',
-      marginRight: columnManagerPosition === 'right' ? `${columnManagerWidth}px` : '0'
-    }
-    : {
-      width: width,
-      height: '100%'
-    };
+  const tableTheme: TableTheme = typeof theme === 'string' ? predefinedThemes[theme] : { ...predefinedThemes.default, ...theme };
 
   return (
     <div style={{
-      position: 'relative',
       display: 'flex',
-      height: height || '100%',
       width: width,
       overflowX: 'hidden', // 防止在 AggloTreeTable 级别出现横向滚动条
       overflowY: 'visible',
+      flexDirection: columnManagerPosition === 'left' ? 'row' : 'row-reverse',
+      maxHeight: 'max-content',
     }}>
       {showColumnManagement && columns && (
-        <div style={{
-          position: 'absolute',
-          left: columnManagerPosition === 'left' ? 0 : undefined,
-          right: columnManagerPosition === 'right' ? 0 : undefined,
-          top: 0,
-          bottom: 0,
-          zIndex: 5
-        }}>
-          <ColumnManager
-            columns={processedColumns}
-            onColumnChange={setProcessedColumns}
-            theme={tableTheme}
-            position={columnManagerPosition}
-          />
-        </div>
-      )}
-      <div style={virtualTableContainerStyle}>
-        <VirtualTable
-          ref={virtualTableRef}
-          {...restProps}
+        <ColumnManager
           columns={processedColumns}
-          dataSource={processedDataSource}
-          rowKey={rowKey}
-          expandable={{
-            expandRowByClick: groupKeys?.length > 0,
-            childrenColumnName: 'children',
-            expandDataIndex,
-            ...expandable,
-          }}
+          onColumnChange={setProcessedColumns}
+          theme={tableTheme}
+          position={columnManagerPosition}
         />
-      </div>
+      )}
+      <VirtualTable
+        ref={virtualTableRef}
+        {...restProps}
+        columns={processedColumns}
+        dataSource={processedDataSource}
+        rowKey={rowKey}
+        theme={theme}
+        expandable={{
+          expandRowByClick: groupKeys?.length > 0,
+          childrenColumnName: 'children',
+          expandDataIndex,
+          ...expandable,
+        }}
+      />
     </div>
   );
 });
