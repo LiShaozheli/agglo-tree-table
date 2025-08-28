@@ -288,7 +288,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
       return getChiild(record);
     },
     children: [],
-  }), [expandColumnWidth, expandedRowKeys, showExpandAll, expandColumnTitle, expandDataIndex, tableTheme.primaryColor, indentSize, expandIcon, rowKey, expandRowByClick]);
+  }), [expandColumnWidth, expandedRowKeys, showExpandAll, expandColumnTitle, expandDataIndex, tableTheme.primaryColor, indentSize, expandIcon, rowKey, expandRowByClick, allRowKeys]);
 
   // 修改 getColumns 函数，支持列的 visible 属性
   const getColumns = (cols: VirtualTableColumn[]): VirtualTableColumn[] => {
@@ -417,7 +417,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     const filteredColumns = getColumns([expandColum, ...columns]);
     const processedColumns = processColumnsWithWidth(filteredColumns);
     setOriginalColumns(processedColumns);
-  }, [columns, expandRowByClick, expandColum.visible, expandColum.width, tableWidth]);
+  }, [columns, expandRowByClick, expandColum, tableWidth]);
 
   return (
     <ResizeObserver
