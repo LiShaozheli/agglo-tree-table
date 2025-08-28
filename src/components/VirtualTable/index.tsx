@@ -295,23 +295,37 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
     const filterVisibleColumns = (columns: VirtualTableColumn[]): VirtualTableColumn[] => {
       return columns
         .map(column => {
+          // 检查是否有children属性
+          const hasChildren = 'children' in column && column.children && column.children.length > 0;
+
           // 如果有子列，递归处理
-          if (column.children && column.children.length > 0) {
+          if (hasChildren) {
             const filteredChildren = filterVisibleColumns(column.children);
             // 如果子列中有可见的，则保留该列并使用过滤后的子列
-            if (filteredChildren.length > 0) {
+            const hasVisibleChildren = filteredChildren.some(child => {
+              // 检查child是否有visible属性
+              return !('visible' in child) || child.visible !== false;
+            });
+
+            // 只有当子列中有可见列时才保留该列
+            if (hasVisibleChildren) {
               return {
                 ...column,
-                children: filteredChildren
+                children: filteredChildren.filter(child =>
+                  !('visible' in child) || child.visible !== false
+                )
               };
+            } else {
+              // 否则过滤掉该列
+              return null;
             }
-            // 如果没有可见的子列，则根据当前列自身的 visible 属性决定是否显示
-            return column.visible !== false ? column : null;
           }
-          // 如果没有子列，检查 visible 属性
-          return column.visible !== false ? column : null;
+
+          // 对于没有子列的列，检查visible属性
+          const isVisible = !('visible' in column) || column.visible !== false;
+          return isVisible ? column : null;
         })
-        .filter((column): column is VirtualTableColumn => column !== null); // 过滤掉 null 值
+        .filter((column): column is VirtualTableColumn => column !== null); // 过滤掉null值并确保类型安全
     };
 
     return filterVisibleColumns(cols);
@@ -323,55 +337,72 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
    * @returns 处理后的列数组，保持原始结构
    */
   const processColumnsWithWidth = (columns: VirtualTableColumn[]): VirtualTableColumn[] => {
-    // 先计算总宽度和未设置宽度的列
+    // 计算所有已设置宽度的列的总宽度
     let totalWidth = 0;
-    const colsNoWidth: Record<string, boolean> = {};
+    // 存储未设置宽度的列
+    const colsNoWidth: Record<string, VirtualTableColumn> = {};
+    // 边框宽度估算（假设每个列之间有1px边框）
+    const borderWidth = columns.length - 1;
 
-    const calculateWidth = (cols: VirtualTableColumn[]) => {
-      cols.forEach(column => {
-        if (column.children && column.children.length > 0) {
-          calculateWidth(column.children);
+    // 遍历所有列，计算总宽度和找出未设置宽度的列
+    const calculateWidth = (cols: VirtualTableColumn[]): VirtualTableColumn[] => {
+      return cols.map(column => {
+        // 检查是否有children属性
+        const hasChildren = 'children' in column && column.children && column.children.length > 0;
+
+        if (hasChildren) {
+          // 递归处理子列
+          return {
+            ...column,
+            children: calculateWidth(column.children)
+          };
         } else {
-          if (!column.width) {
+          // 处理叶子节点列
+          // 检查是否有width属性
+          const hasWidth = 'width' in column && column.width !== undefined;
+
+          if (hasWidth) {
+            totalWidth += (typeof column.width === 'number' ? column.width : 0);
+          } else {
+            // 确保dataIndex存在
             if ('dataIndex' in column && column.dataIndex) {
-              colsNoWidth[column.dataIndex] = true;
+              colsNoWidth[column.dataIndex] = column;
             }
           }
-          totalWidth += (typeof column.width === 'number' ? column.width : 0);
+          return column;
         }
       });
     };
 
     calculateWidth(columns);
 
-    // 计算需要分配的宽度，考虑边框的影响
-    // 表格有竖向边框时，每个列间会有1px的边框，总共需要 (列数-1) 像素的边框宽度
-    const flatColumns = columns.flatMap(col => col.children || col);
-    const borderWidth = flatColumns.length > 0 ? (flatColumns.length - 1) : 0;
     let extraWidthPerCol = 0;
 
     // 如果总宽度小于表格宽度且存在未设置宽度的列，则平均分配剩余空间
-    if (totalWidth < (tableWidth - borderWidth) && Object.keys(colsNoWidth).length > 0) {
+    if (tableWidth > 0 && totalWidth < (tableWidth - borderWidth) && Object.keys(colsNoWidth).length > 0) {
       extraWidthPerCol = Math.floor(((tableWidth - borderWidth) - totalWidth) / Object.keys(colsNoWidth).length);
     }
 
     // 如果所有列都设置了宽度但总宽度小于表格宽度，则需要按比例调整
     let proportion = 1;
-    if (totalWidth < (tableWidth - borderWidth) && Object.keys(colsNoWidth).length === 0 && totalWidth > 0) {
+    if (tableWidth > 0 && totalWidth < (tableWidth - borderWidth) && Object.keys(colsNoWidth).length === 0 && totalWidth > 0) {
       proportion = (tableWidth - borderWidth) / totalWidth;
     }
 
     // 如果有未设置宽度的列，同时总宽度（包括分配给未设置宽度列的宽度）仍小于表格宽度，
     // 则所有列都需要按比例调整
     const totalWidthWithExtra = totalWidth + extraWidthPerCol * Object.keys(colsNoWidth).length;
-    if (Object.keys(colsNoWidth).length > 0 && totalWidthWithExtra < (tableWidth - borderWidth) && totalWidthWithExtra > 0) {
+    if (tableWidth > 0 && Object.keys(colsNoWidth).length > 0 && totalWidthWithExtra < (tableWidth - borderWidth) && totalWidthWithExtra > 0) {
       proportion = (tableWidth - borderWidth) / totalWidthWithExtra;
     }
 
     // 创建新的列结构并设置宽度
     const assignWidth = (cols: VirtualTableColumn[]): VirtualTableColumn[] => {
       return cols.map(column => {
-        if (column.children && column.children.length > 0) {
+        // 检查是否有children属性
+        const hasChildren = 'children' in column && column.children && column.children.length > 0;
+
+        if (hasChildren) {
           // 递归处理子列
           return {
             ...column,
@@ -379,12 +410,14 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           };
         } else {
           // 处理叶子节点列
-          let finalWidth = column.width || 0;
+          // 检查是否有width属性
+          const hasWidth = 'width' in column && column.width !== undefined;
+          let finalWidth = hasWidth ? column.width : 0;
 
           // 如果该列未设置宽度
-          if (!column.width) {
+          if (!hasWidth) {
             // 如果总宽度已经超过表格宽度，或者无法分配额外宽度，则设置默认宽度100px
-            if (totalWidth >= (tableWidth - borderWidth) || extraWidthPerCol <= 0) {
+            if (tableWidth <= 0 || totalWidth >= (tableWidth - borderWidth) || extraWidthPerCol <= 0) {
               finalWidth = 100;
             } else {
               // 平均分配额外宽度给未设置宽度的列
@@ -392,13 +425,14 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
             }
           }
           // 如果该列已设置宽度且需要按比例调整
-          else if (column.width && proportion !== 1) {
+          else if (hasWidth && proportion !== 1) {
             // 按比例调整已设置宽度的列
             finalWidth = Math.floor((typeof column.width === 'number' ? column.width : 0) * proportion);
           }
 
           // 如果该列未设置宽度且需要按比例调整（在分配了默认宽度或额外宽度后）
-          if (!column.width && proportion !== 1) {
+          const isDataIndexColumn = 'dataIndex' in column;
+          if (!hasWidth && proportion !== 1 && isDataIndexColumn) {
             finalWidth = Math.floor((finalWidth as number) * proportion);
           }
 
@@ -445,6 +479,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
               position: 'sticky',
               top: 0,
               zIndex: 1,
+              minWidth: '100%',
             }}
           />
           {loading ? (

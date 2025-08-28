@@ -30,6 +30,8 @@ export interface ColumnManagerProps {
   theme?: TableTheme;
   /** Position of the column manager */
   position?: 'left' | 'right';
+  /** Height of the column manager */
+  height?: string | number;
 }
 
 type FlattenedColumn = VirtualTableColumn & {
@@ -128,6 +130,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
   onColumnChange,
   theme,
   position = 'right',
+  height,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -403,7 +406,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
             zIndex: 5,  // 降低 z-index 值，避免遮挡 dumi 菜单栏
             display: 'flex',
             flexDirection: 'column',
-            // height: '100%',
+            height,
             minWidth: '200px',
           }}
         >

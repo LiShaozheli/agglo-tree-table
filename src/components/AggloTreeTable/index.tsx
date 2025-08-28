@@ -155,6 +155,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
           onColumnChange={setProcessedColumns}
           theme={tableTheme}
           position={columnManagerPosition}
+          height={props.height}
         />
       )}
       <VirtualTable
