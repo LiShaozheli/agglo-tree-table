@@ -249,3 +249,255 @@ export default () => (
 ### 多维度数据展示
 
 支持按多个维度进行数据分组，便于查看不同层级的数据汇总信息。
+
+### 完整功能演示
+
+以下示例展示了 AggloTreeTable 的所有核心功能，包括大数据量渲染、多级分组、自定义聚合等，并且所有功能都支持动态控制：
+
+```tsx
+import React, { useRef, useState } from 'react';
+import { AggloTreeTable, AggloTreeTableHandles } from 'agglo-tree-table';
+
+// 生成大量测试数据
+const generateData = (count: number) => {
+  const departments = ['技术部', '产品部', '设计部', '市场部', '运营部'];
+  const teams = ['前端组', '后端组', '移动端', '测试组', '运维组'];
+  const levels = ['P5', 'P6', 'P7', 'P8'];
+  const data = [];
+  
+  for (let i = 0; i < count; i++) {
+    data.push({
+      id: `emp_${i}`,
+      department: departments[Math.floor(Math.random() * departments.length)],
+      team: teams[Math.floor(Math.random() * teams.length)],
+      name: `员工${i}`,
+      level: levels[Math.floor(Math.random() * levels.length)],
+      salary: Math.floor(Math.random() * 50000) + 50000, // 5万到10万的随机薪资
+      bonus: Math.floor(Math.random() * 20000) + 10000,  // 1万到3万的随机奖金
+      performance: (Math.random() * 3 + 2).toFixed(1),   // 2.0到5.0的随机绩效
+      entryDate: `202${Math.floor(Math.random() * 3)}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+    });
+  }
+  
+  return data;
+};
+
+export default () => {
+  const tableRef = useRef<AggloTreeTableHandles>(null);
+  const [data] = useState(() => generateData(10000)); // 生成1万条数据
+  const [showColumnManagement, setShowColumnManagement] = useState(true);
+  const [columnManagerPosition, setColumnManagerPosition] = useState<'left' | 'right'>('right');
+  const [groupKeys, setGroupKeys] = useState<string[]>(['department', 'team']);
+  const [showExpandAll, setShowExpandAll] = useState(true);
+  const [height, setHeight] = useState(600);
+  const [enableAggregation, setEnableAggregation] = useState(true);
+  
+  const columns = [
+    {
+      title: '组织架构',
+      children: [
+        {
+          title: '部门',
+          dataIndex: 'department',
+          width: 120,
+        },
+        {
+          title: '团队',
+          dataIndex: 'team',
+          width: 120,
+        }
+      ]
+    },
+    {
+      title: '员工信息',
+      children: [
+        {
+          title: '姓名',
+          dataIndex: 'name',
+          width: 120,
+        },
+        {
+          title: '职级',
+          dataIndex: 'level',
+          width: 80,
+        },
+        {
+          title: '入职日期',
+          dataIndex: 'entryDate',
+          width: 120,
+        }
+      ]
+    },
+    {
+      title: '薪酬信息',
+      children: [
+        {
+          title: '基本工资',
+          dataIndex: 'salary',
+          width: 120,
+        },
+        {
+          title: '年度奖金',
+          dataIndex: 'bonus',
+          width: 120,
+        }
+      ]
+    },
+    {
+      title: '绩效评估',
+      children: [
+        {
+          title: '年度绩效',
+          dataIndex: 'performance',
+          width: 100,
+        }
+      ]
+    }
+  ];
+
+  return (
+    <div>
+      <div style={{ 
+        marginBottom: 16, 
+        display: 'flex', 
+        gap: 16, 
+        flexWrap: 'wrap',
+        padding: 16,
+        border: '1px solid #f0f0f0',
+        borderRadius: 4
+      }}>
+        <div>
+          <h4 style={{ margin: '0 0 8px 0' }}>基础功能</h4>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <label>
+              <input 
+                type="checkbox" 
+                checked={showColumnManagement}
+                onChange={(e) => setShowColumnManagement(e.target.checked)}
+              />
+              列管理
+            </label>
+            
+            <label>
+              <input 
+                type="checkbox" 
+                checked={showExpandAll}
+                onChange={(e) => setShowExpandAll(e.target.checked)}
+              />
+              全部展开/收起按钮
+            </label>
+            
+            <label>
+              <input 
+                type="checkbox" 
+                checked={enableAggregation}
+                onChange={(e) => setEnableAggregation(e.target.checked)}
+              />
+              数据聚合
+            </label>
+          </div>
+        </div>
+        
+        <div>
+          <h4 style={{ margin: '0 0 8px 0' }}>分组设置</h4>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <label>
+              <input 
+                type="checkbox" 
+                checked={groupKeys.includes('department')}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setGroupKeys(prev => [...prev, 'department']);
+                  } else {
+                    setGroupKeys(prev => prev.filter(key => key !== 'department'));
+                  }
+                }}
+              />
+              按部门分组
+            </label>
+            
+            <label>
+              <input 
+                type="checkbox" 
+                checked={groupKeys.includes('team')}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setGroupKeys(prev => [...prev, 'team']);
+                  } else {
+                    setGroupKeys(prev => prev.filter(key => key !== 'team'));
+                  }
+                }}
+              />
+              按团队分组
+            </label>
+          </div>
+        </div>
+        
+        <div>
+          <h4 style={{ margin: '0 0 8px 0' }}>列管理位置</h4>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <label>
+              <input 
+                type="radio" 
+                name="columnManagerPosition" 
+                value="left"
+                checked={columnManagerPosition === 'left'}
+                onChange={(e) => setColumnManagerPosition(e.target.value as 'left' | 'right')}
+              />
+              左侧
+            </label>
+            <label>
+              <input 
+                type="radio" 
+                name="columnManagerPosition" 
+                value="right"
+                checked={columnManagerPosition === 'right'}
+                onChange={(e) => setColumnManagerPosition(e.target.value as 'left' | 'right')}
+              />
+              右侧
+            </label>
+          </div>
+        </div>
+        
+        <div>
+          <h4 style={{ margin: '0 0 8px 0' }}>表格高度</h4>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input 
+              type="range" 
+              min="300" 
+              max="800" 
+              value={height}
+              onChange={(e) => setHeight(Number(e.target.value))}
+              style={{ width: 100 }}
+            />
+            <span>{height}px</span>
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button onClick={() => tableRef.current?.expandAll()}>全部展开</button>
+          <button onClick={() => tableRef.current?.collapseAll()}>全部收起</button>
+        </div>
+      </div>
+      
+      <AggloTreeTable
+        ref={tableRef}
+        columns={columns}
+        dataSource={data}
+        groupKeys={groupKeys}
+        rowKey="id"
+        showColumnManagement={showColumnManagement}
+        columnManagerPosition={columnManagerPosition}
+        height={height}
+        AggregateKeys={enableAggregation ? {
+          equalKeys: ['level'],
+          addBNkeys: ['salary', 'bonus'],
+        } : undefined}
+        expandable={{
+          showExpandAll: showExpandAll,
+          expandColumnTitle: '组织架构',
+        }}
+      />
+    </div>
+  );
+};
