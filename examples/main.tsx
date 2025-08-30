@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import BasicExample from './basic-example';
 import NestedHeaderExample from './nested-header-example';
+import GroupManagementExample from './group-management-example';
 
 // 为了方便演示，暂时注释掉基础示例，展示嵌套表头示例
 // ReactDOM.render(
@@ -11,9 +12,16 @@ import NestedHeaderExample from './nested-header-example';
 //   document.getElementById('root')
 // );
 
+// ReactDOM.render(
+//   <React.StrictMode>
+//     <NestedHeaderExample />
+//   </React.StrictMode>,
+//   document.getElementById('root')
+// );
+
 ReactDOM.render(
   <React.StrictMode>
-    <NestedHeaderExample />
+    <GroupManagementExample />
   </React.StrictMode>,
   document.getElementById('root')
 );

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import VirtualTable, { type VirtualTableProps, type VirtualTableHandles } from '../VirtualTable';
 import { TreeClass } from '../../utils/treeClass';
 import ColumnManager from './columnManager';
+import GroupManager from './groupManager';
 import { predefinedThemes, type TableTheme } from '../VirtualTable/themes';
 import type { VirtualTableColumn } from './types';
 
@@ -50,6 +51,15 @@ export interface AggloTreeTableProps extends Omit<VirtualTableProps, 'columns' |
   /** Position of the column management component */
   /** 列管理组件的位置 */
   columnManagerPosition?: 'left' | 'right';
+  /** Whether to show group management component */
+  /** 是否显示分组管理组件 */
+  showGroupManagement?: boolean;
+  /** Position of the group management component */
+  /** 分组管理组件的位置 */
+  groupManagerPosition?: 'top' | 'bottom';
+  /** Whether to use high precision calculation for aggregation */
+  /** 是否使用高精度计算进行聚合 */
+  useHighPrecision?: boolean;
   /** Width of the table container */
   /** 表格容器的宽度 */
   width?: number | string;
@@ -94,14 +104,17 @@ export interface AggloTreeTableHandles {
  */
 const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTableProps>((props, ref) => {
   const {
-    groupKeys = [],
-    columns = [],
+    groupKeys,
+    columns,
     dataSource = [],
     rowKey,
     AggregateKeys,
     sort,
     showColumnManagement = false,
+    showGroupManagement = false,
     columnManagerPosition = 'right',
+    groupManagerPosition = 'top',
+    useHighPrecision = false,
     width = '100%',
     theme,
     ...restProps
@@ -111,25 +124,37 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
 
   const expandDataIndex = expandable?.expandDataIndex ?? 'expand';
 
-  const [processedDataSource, setProcessedDataSource] = useState<any[]>([]);
-  const [processedColumns, setProcessedColumns] = useState<any[]>(columns);
+  const [processedDataSource, setProcessedDataSource] = useState<Array<Record<string, any>>>([]);
+  const [processedColumns, setProcessedColumns] = useState<VirtualTableColumn[]>(columns || []);
+  const [currentGroupKeys, setCurrentGroupKeys] = useState<string[]>(groupKeys || []);
+  const [currentAggregateKeys, setCurrentAggregateKeys] = useState<AggregateKeysType | undefined>(AggregateKeys);
   const virtualTableRef = useRef<VirtualTableHandles>(null);
+
+  // 当外部 groupKeys 变化时，更新内部状态
+  useEffect(() => {
+    setCurrentGroupKeys(groupKeys || []);
+  }, [groupKeys]);
+
+  // 当外部 AggregateKeys 变化时，更新内部状态
+  useEffect(() => {
+    setCurrentAggregateKeys(AggregateKeys);
+  }, [AggregateKeys]);
 
   // 处理数据源，包括分组和聚合
   useEffect(() => {
-    if (groupKeys?.length < 1) {
+    if (currentGroupKeys?.length < 1) {
       setProcessedDataSource(dataSource);
     } else {
       const arrayTreeData = new TreeClass();
-      arrayTreeData.creatTreeData(dataSource, groupKeys, rowKey, expandDataIndex);
-      if (!AggregateKeys) {
+      arrayTreeData.creatTreeData(dataSource, currentGroupKeys, rowKey, expandDataIndex);
+      if (!currentAggregateKeys) {
         setProcessedDataSource(arrayTreeData.treeData);
       } else {
-        const newData = arrayTreeData.addTree(AggregateKeys, sort);
+        const newData = arrayTreeData.addTree(currentAggregateKeys, sort);
         setProcessedDataSource(Array.isArray(newData) ? newData : [newData]);
       }
     }
-  }, [dataSource, groupKeys, rowKey, expandDataIndex, AggregateKeys, sort]);
+  }, [dataSource, currentGroupKeys, rowKey, expandDataIndex, currentAggregateKeys, sort]);
 
   // 使用useImperativeHandle暴露方法给父组件调用
   React.useImperativeHandle(ref, () => ({
@@ -141,38 +166,55 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
   const tableTheme: TableTheme = typeof theme === 'string' ? predefinedThemes[theme] : { ...predefinedThemes.default, ...theme };
 
   return (
-    <div style={{
-      display: 'flex',
-      width: width,
-      overflowX: 'hidden', // 防止在 AggloTreeTable 级别出现横向滚动条
-      overflowY: 'visible',
-      flexDirection: columnManagerPosition === 'left' ? 'row' : 'row-reverse',
-      maxHeight: 'max-content',
-    }}>
-      {showColumnManagement && columns && (
-        <ColumnManager
-          columns={processedColumns}
-          onColumnChange={setProcessedColumns}
-          theme={tableTheme}
-          position={columnManagerPosition}
-          height={props.height}
-        />
-      )}
-      <VirtualTable
-        ref={virtualTableRef}
-        {...restProps}
-        columns={processedColumns}
-        dataSource={processedDataSource}
-        rowKey={rowKey}
-        theme={theme}
-        expandable={{
-          expandRowByClick: groupKeys?.length > 0,
-          childrenColumnName: 'children',
-          expandDataIndex,
-          ...expandable,
-        }}
-      />
-    </div>
+    <>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {showGroupManagement && groupManagerPosition === 'top' && (
+          <GroupManager
+            groupKeys={currentGroupKeys}
+            aggregateKeys={currentAggregateKeys}
+            onGroupKeysChange={setCurrentGroupKeys}
+            onAggregateKeysChange={setCurrentAggregateKeys}
+            theme={tableTheme}
+            columns={columns}
+            dataSource={dataSource}
+            useHighPrecision={useHighPrecision}
+          />
+        )}
+        <div style={{
+          display: 'flex',
+          width: width,
+          overflowX: 'hidden', // 防止在 AggloTreeTable 级别出现横向滚动条
+          overflowY: 'visible',
+          flexDirection: columnManagerPosition === 'left' ? 'row' : 'row-reverse',
+          maxHeight: 'max-content',
+        }}>
+          {showColumnManagement && columns && (
+            <ColumnManager
+              columns={processedColumns}
+              onColumnChange={setProcessedColumns}
+              theme={tableTheme}
+              position={columnManagerPosition}
+              height={props.height}
+            />
+          )}
+
+          <VirtualTable
+            ref={virtualTableRef}
+            {...restProps}
+            columns={processedColumns}
+            dataSource={processedDataSource}
+            rowKey={rowKey}
+            theme={theme}
+            expandable={{
+              expandRowByClick: currentGroupKeys?.length > 0,
+              childrenColumnName: 'children',
+              expandDataIndex,
+              ...expandable,
+            }}
+          />
+        </div>
+      </div>
+    </>
   );
 });
 
