@@ -378,7 +378,7 @@ const ColumnManager: React.FC<ColumnManagerProps> = ({
         onMouseLeave={(e) => {
           e.currentTarget.style.backgroundColor = theme?.headerBgColor || '#f0f0f0'; // 恢复到背景色而不是白色
         }}
-        title={isOpen ? "收起列管理" : "展开列管理"}
+        title={isOpen ? '收起列管理' : '展开列管理'}
       >
         <div style={{
           alignItems: 'center',

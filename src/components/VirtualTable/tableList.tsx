@@ -172,8 +172,8 @@ const TableList = (props: TableListProps) => {
           >
             <div className={`agglo-tree-table-cell-inner ${
               column.align === 'right' ? 'agglo-tree-table-cell-inner-right' : 
-              column.align === 'left' ? 'agglo-tree-table-cell-inner-left' : 
-              'agglo-tree-table-cell-inner-center'
+                column.align === 'left' ? 'agglo-tree-table-cell-inner-left' : 
+                  'agglo-tree-table-cell-inner-center'
             }`}
             style={{
               ...(column.style || {}), // 将用户自定义样式移到内层

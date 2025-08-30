@@ -256,7 +256,7 @@ const GroupManager: React.FC<GroupManagerProps> = ({
             border: `1px solid ${theme?.borderColor || '#d9d9d9'}`
           }}
         >
-          <option value="">{useHighPrecision ? "添加高精度" : "添加求和"}</option>
+          <option value="">{useHighPrecision ? '添加高精度' : '添加求和'}</option>
           {availableAddKeys.map((field) => (
             <option key={field} value={field}>{field}</option>
           ))}

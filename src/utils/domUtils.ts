@@ -15,7 +15,7 @@
 export const calculateFixedElementsHeight = (containerRef?: React.RefObject<HTMLElement>): number => {
   // 获取所有可能的固定元素
   const allElements = document.querySelectorAll('body *');
-  let fixedElements: HTMLElement[] = [];
+  const fixedElements: HTMLElement[] = [];
 
   // 遍历所有元素，找出固定在顶部的元素
   allElements.forEach(element => {
