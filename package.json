@@ -31,7 +31,7 @@
     "金融数据",
     "虚拟表格"
   ],
-  "author": "Your Name",
+  "author": "LiShaoZhe",
   "license": "MIT",
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
