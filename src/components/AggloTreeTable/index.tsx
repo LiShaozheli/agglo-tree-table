@@ -26,7 +26,7 @@ export interface AggregateKeysType {
  * Props for the AggloTreeTable component
  * AggloTreeTable 组件的 Props
  */
-export interface AggloTreeTableProps extends Omit<VirtualTableProps, 'columns' | 'dataSource' | 'expandable'> {
+export interface AggloTreeTableProps extends Omit<VirtualTableProps, 'columns' | 'dataSource'> {
   /** Keys to group by, in hierarchical order */
   /** 用于分组的键，按层级顺序排列 */
   groupKeys?: string[];
@@ -120,7 +120,7 @@ const AggloTreeTable = React.forwardRef<AggloTreeTableHandles, AggloTreeTablePro
     ...restProps
   } = props;
 
-  const expandable = (props as VirtualTableProps).expandable;
+  const expandable = props.expandable;
 
   const expandDataIndex = expandable?.expandDataIndex ?? 'expand';
 
