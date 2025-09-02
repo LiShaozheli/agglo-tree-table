@@ -142,11 +142,6 @@ const ColumnManagementExample = () => {
         groupKeys={['instrumentName']}
         rowKey={'positionId'}
         showColumnManagement={showColumnManagement}
-        expandable={{
-          expandDataIndex: 'expand',
-          expandColumnWidth: 200,
-          expandColumnTitle: 'Group',
-        }}
         AggregateKeys={{
           equalKeys: ['instrumentName'],
           addBNkeys: [

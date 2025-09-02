@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SettingOutlined, HolderOutlined } from '@ant-design/icons';
 import type { TableTheme } from '../VirtualTable/themes';
-import type { VirtualTableColumn } from '../VirtualTable/types';
+import { VirtualTableColumn, isGroupColumn, isDataColumn } from '../VirtualTable/types';
 import {
   DndContext,
   closestCenter,
@@ -54,9 +54,9 @@ const extractAllColumns = (cols: VirtualTableColumn[]) => {
   const allColumns: VirtualTableColumn[] = [];
   const extract = (columns: VirtualTableColumn[]) => {
     columns.forEach(column => {
-      if (column.children && column.children.length > 0) {
+      if (isGroupColumn(column) && column.children && column.children.length > 0) {
         extract(column.children);
-      } else {
+      } else if (isDataColumn(column)) {
         allColumns.push(column);
       }
     });
@@ -96,7 +96,7 @@ const rebuildNestedColumnsFromFlattened = (flattenedColumns: FlattenedColumn[]):
 
   // 清除所有列的children属性，准备重新构建
   Object.values(columnMap).forEach(col => {
-    delete col.children;
+    delete (col as any).children;
   });
 
   // 重新构建嵌套结构
@@ -111,7 +111,7 @@ const rebuildNestedColumnsFromFlattened = (flattenedColumns: FlattenedColumn[]):
     } else {
       // 子级别的列
       const parentPath = pathParts.slice(0, -1).join('-');
-      const parentColumn = columnMap[parentPath];
+      const parentColumn = columnMap[parentPath] as FlattenedColumn & { children: VirtualTableColumn[] };
 
       if (parentColumn) {
         if (!parentColumn.children) {

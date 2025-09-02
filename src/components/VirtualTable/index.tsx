@@ -287,7 +287,6 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
       };
       return getChiild(record);
     },
-    children: [],
   }), [expandColumnWidth, expandedRowKeys, showExpandAll, expandColumnTitle, expandDataIndex, tableTheme.primaryColor, indentSize, expandIcon, rowKey, expandRowByClick, allRowKeys]);
 
   // 修改 getColumns 函数，支持列的 visible 属性
@@ -355,7 +354,7 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           return {
             ...column,
             children: calculateWidth(column.children)
-          };
+          } as VirtualTableColumn;
         } else {
           // 处理叶子节点列
           // 检查是否有width属性
@@ -407,12 +406,12 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           return {
             ...column,
             children: assignWidth(column.children)
-          };
+          } as VirtualTableColumn;
         } else {
           // 处理叶子节点列
           // 检查是否有width属性
           const hasWidth = 'width' in column && column.width !== undefined;
-          let finalWidth = hasWidth ? column.width : 0;
+          let finalWidth: number | string | undefined = hasWidth ? column.width : undefined;
 
           // 如果该列未设置宽度
           if (!hasWidth) {
@@ -431,15 +430,14 @@ const VirtualTable = forwardRef<VirtualTableHandles, VirtualTableProps>((props, 
           }
 
           // 如果该列未设置宽度且需要按比例调整（在分配了默认宽度或额外宽度后）
-          const isDataIndexColumn = 'dataIndex' in column;
-          if (!hasWidth && proportion !== 1 && isDataIndexColumn) {
-            finalWidth = Math.floor((finalWidth as number) * proportion);
+          if (!hasWidth && proportion !== 1) {
+            finalWidth = Math.floor((typeof finalWidth === 'number' ? finalWidth : 100) * proportion);
           }
 
           return {
             ...column,
             width: finalWidth
-          };
+          } as VirtualTableColumn;
         }
       });
     };

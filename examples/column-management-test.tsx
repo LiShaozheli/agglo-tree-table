@@ -100,7 +100,6 @@ const ColumnManagementTest = () => {
         groupKeys={[]}
         rowKey="id"
         showColumnManagement={showColumnManagement}
-        displayColumns={displayColumns}
       />
     </div>
   );

@@ -148,22 +148,6 @@ const NestedHeaderExample = () => {
         dataSource={sampleData}
         groupKeys={['instrumentName']}
         rowKey={'positionId'}
-        displayColumns={[
-          'instrumentName', 
-          'contractCode', 
-          'MTE:pv', 
-          'MTE:delta', 
-          'MTE:deltaCash',
-          'MTE:gamma',
-          'MTE:vega',
-          'remainingLot', 
-          'remainingNotional'
-        ]}
-        expandable={{
-          expandDataIndex: 'expand',
-          expandColumnWidth: 200,
-          expandColumnTitle: 'Group',
-        }}
         AggregateKeys={{
           equalKeys: ['instrumentName'],
           addBNkeys: [

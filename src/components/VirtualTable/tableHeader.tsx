@@ -1,6 +1,7 @@
 import React, { FC, memo, useMemo, useState } from 'react';
 import { predefinedThemes, type TableTheme } from './themes';
 import type { VirtualTableColumn } from './types';
+import { isGroupColumn, isDataColumn } from './types';
 import StickyContainer from '../StickyContainer';
 import './index.css';
 
@@ -62,10 +63,10 @@ const TableHeader: FC<TableHeaderProps> = props => {
 
     const processColumns = (cols: VirtualTableColumn[]) => {
       cols.forEach(column => {
-        if (column.dataIndex && column.width) {
+        if (isDataColumn(column) && column.dataIndex && column.width) {
           map[column.dataIndex] = typeof column.width === 'string' ? parseInt(column.width, 10) : column.width;
         }
-        if (column.children && column.children.length > 0) {
+        if (isGroupColumn(column) && column.children && column.children.length > 0) {
           processColumns(column.children);
         }
       });
@@ -172,12 +173,14 @@ const TableHeader: FC<TableHeaderProps> = props => {
           const borderWidth = getHeaderRowBorderStyle() === 'none' ? 0 : 1;
           // 计算子列总宽度（包含border）
           const calculateChildrenWidth = (col: VirtualTableColumn): number => {
-            if (!col.children || col.children.length === 0) {
+            if (isGroupColumn(col) && col.children && col.children.length > 0) {
+              // 递归计算子列宽度
+              const childrenWidth = col.children.reduce((sum, child) => sum + calculateChildrenWidth(child), 0);
+              return childrenWidth;
+            } else if (isDataColumn(col)) {
               return (typeof col.width === 'string' ? parseInt(col.width, 10) : col.width || 0) + borderWidth;
             }
-            // 递归计算子列宽度
-            const childrenWidth = col.children.reduce((sum, child) => sum + calculateChildrenWidth(child), 0);
-            return childrenWidth;
+            return borderWidth;
           };
 
           // 对有子列和无子列的表头进行彻底区分渲染

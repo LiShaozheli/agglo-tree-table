@@ -110,12 +110,6 @@ const BasicExample = () => {
         dataSource={sampleData}
         groupKeys={['instrumentName']}
         rowKey={'positionId'}
-        displayColumns={['instrumentName', 'contractCode', 'MTE:pv', 'MTE:delta', 'MTE:deltaCash', 'remainingLot', 'remainingNotional']}
-        expandable={{
-          expandDataIndex: 'expand',
-          expandColumnWidth: 200,
-          expandColumnTitle: 'Group',
-        }}
         AggregateKeys={{
           equalKeys: ['instrumentName'],
           addBNkeys: [
