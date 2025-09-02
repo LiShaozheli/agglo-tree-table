@@ -1,6 +1,6 @@
 {
   "name": "agglo-tree-table",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A React tree table component with aggregation capabilities for financial data | 一个支持金融数据聚合功能的 React 树形表格组件",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
