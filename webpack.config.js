@@ -33,8 +33,8 @@ module.exports = {
         "./agglo-tree-table": "./src/index.ts",
       },
       shared: {
-        react: { singleton: true, requiredVersion: "^16.8.0 || ^17.0.0 || ^18.0.0" },
-        "react-dom": { singleton: true, requiredVersion: "^16.8.0 || ^17.0.0 || ^18.0.0" },
+        react: { singleton: true, requiredVersion: "^16.0.0 || ^17.0.0 || ^18.0.0" },
+        "react-dom": { singleton: true, requiredVersion: "^16.0.0 || ^17.0.0 || ^18.0.0" },
       },
     }),
   ],
