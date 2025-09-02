@@ -12,8 +12,8 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "node16",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,
@@ -26,13 +26,13 @@
     "paths": {
       "agglo-tree-table": ["src"],
       "agglo-tree-table/*": ["src/*"]
-    }
+    },
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "src",
     "examples",
-    ".dumirc.ts",
-    "vite.config.ts"
+    ".dumirc.ts"
   ],
   "exclude": [
     "node_modules",
