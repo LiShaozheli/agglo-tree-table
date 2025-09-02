@@ -145,7 +145,7 @@ AggloTreeTable 支持嵌套表头，可以创建复杂的表头结构来更好�
 | displayColumns | 要显示的列（仅显示这些列） | `string[]` | `[]` |
 | showColumnManagement | 是否显示列管理组件 | `boolean` | `false` |
 | loading | 加载状态 | `boolean` | `false` |
-| expandable | 可展开配置 | `ExpandableProps` | - |
+| expandable | 可展开配置，参考 VirtualTable 的 expandable 属性 | `ExpandableProps` | - |
 
 ### AggregateKeysType
 
